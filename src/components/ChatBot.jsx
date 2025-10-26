@@ -771,24 +771,28 @@ Puedo ayudarte con:
               />
             </div>
 
-            {/* Botón de enviar/micrófono */}
+            {/* Botón de micrófono */}
+            <button
+              type="button"
+              disabled={!isConnected || isChatLoading}
+              className="p-3 bg-kikk-black hover:bg-kikk-gray-dark disabled:bg-kikk-gray border border-kikk-gray hover:border-kikk-orange rounded-sm transition-all duration-200 disabled:opacity-50"
+              title="Mensaje de voz"
+            >
+              <svg className="w-5 h-5 text-kikk-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </button>
+
+            {/* Botón de enviar */}
             <button
               type="submit"
               disabled={!isConnected || isChatLoading || !input.trim()}
               className="p-3 bg-kikk-orange hover:bg-kikk-orange-light disabled:bg-kikk-gray disabled:border disabled:border-kikk-gray rounded-sm transition-all duration-200 disabled:opacity-50"
-              title={input.trim() ? "Enviar" : "Mensaje de voz"}
+              title="Enviar mensaje"
             >
-              {input.trim() ? (
-                // Icono de enviar
-                <svg className="w-5 h-5 text-kikk-black" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                </svg>
-              ) : (
-                // Icono de micrófono
-                <svg className="w-5 h-5 text-kikk-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              )}
+              <svg className="w-5 h-5 text-kikk-black" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
             </button>
           </form>
         </div>
