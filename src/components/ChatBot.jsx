@@ -324,7 +324,7 @@ Puedo ayudarte con:
                 </button>
               )}
             </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+            <div className="space-y-2">
               {!isConnected || !userAddress ? (
                 <div className="p-4 rounded-lg bg-jet-600 bg-opacity-30 border border-jet-600 text-center">
                   <p className="text-jet-800 text-xs">
@@ -394,38 +394,44 @@ Puedo ayudarte con:
                       key={tx.txid + index}
                       className="p-3 rounded-lg border transition-colors bg-licorice-300 border-jet-600 hover:border-jet-500"
                     >
-                      {/* Header: Tipo + Ver ↗ en la misma línea */}
-                      <div className="flex items-center justify-between mb-2">
-                        <span className={`text-xs font-semibold ${style.color}`}>
-                          {style.label}
-                        </span>
+                      {/* Primera línea: Monto + Tipo/Ver */}
+                      <div className="flex items-start justify-between mb-1">
+                        {/* Monto a la izquierda */}
+                        {tx.amountSTX > 0 && (
+                          <span className={`text-sm font-bold ${style.color}`}>
+                            {style.sign}{tx.amount} STX
+                          </span>
+                        )}
+                        {/* Para deploy sin monto, mostrar el tipo */}
+                        {tx.amountSTX === 0 && (
+                          <span className={`text-xs font-semibold ${style.color}`}>
+                            {style.label}
+                          </span>
+                        )}
+                        {/* Ver ↗ a la derecha */}
                         <a
                           href={tx.explorerUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-giants-orange hover:text-sandy-brown text-[9px] font-semibold"
+                          className="text-giants-orange hover:text-sandy-brown text-[9px] font-semibold whitespace-nowrap ml-2"
                         >
                           Ver ↗
                         </a>
                       </div>
 
-                      {/* Monto */}
-                      {tx.amountSTX > 0 && (
-                        <div className="mb-1">
-                          <span className={`text-sm font-bold ${style.color}`}>
-                            {style.sign}{tx.amount} STX
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Fee */}
-                      {tx.fee && parseFloat(tx.fee) > 0 && (
-                        <div className="mb-2">
+                      {/* Segunda línea: Fee + Tipo (si hay monto) */}
+                      <div className="flex items-center justify-between mb-2">
+                        {tx.fee && parseFloat(tx.fee) > 0 && (
                           <p className="text-jet-700 text-[8px]">
                             Fee: {tx.fee} STX
                           </p>
-                        </div>
-                      )}
+                        )}
+                        {tx.amountSTX > 0 && (
+                          <span className={`text-[9px] font-semibold ${style.color}`}>
+                            {style.label}
+                          </span>
+                        )}
+                      </div>
                       
                       {/* Mostrar estado si es pendiente */}
                       {tx.status === 'pending' && (
@@ -434,15 +440,17 @@ Puedo ayudarte con:
                         </div>
                       )}
                       
-                      {/* Dirección/Contrato en una sola línea compacta */}
-                      <div className="mb-1">
-                        <p className="text-jet-800 text-[8px] font-mono truncate">
-                          <span className="text-jet-900 font-semibold">
-                            {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : tx.type === 'deploy' ? '📝 Contrato:' : 'Contrato: '}
-                          </span>
-                          {tx.type === 'deploy' ? '' : (tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient)}
-                        </p>
-                      </div>
+                      {/* Dirección/Contrato */}
+                      {tx.type !== 'deploy' && (
+                        <div className="mb-1">
+                          <p className="text-jet-800 text-[8px] font-mono truncate">
+                            <span className="text-jet-900 font-semibold">
+                              {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : 'Contrato: '}
+                            </span>
+                            {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   );
                 })

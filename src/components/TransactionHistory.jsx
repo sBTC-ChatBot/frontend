@@ -131,34 +131,44 @@ const TransactionHistory = ({ address, isOpen, onClose }) => {
                     key={tx.txid + index}
                     className="rounded-xl p-4 border transition-all duration-300 bg-jet bg-opacity-50 hover:bg-opacity-70 border-jet-600 hover:border-giants-orange"
                   >
-                    {/* Header: Tipo + Ver ↗ en la misma línea */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`font-semibold text-sm sm:text-base ${style.color}`}>
-                        {style.label}
-                      </span>
+                    {/* Primera línea: Monto + Ver ↗ */}
+                    <div className="flex items-start justify-between mb-2">
+                      {/* Monto a la izquierda */}
+                      {tx.amountSTX > 0 && (
+                        <span className={`text-base sm:text-lg font-bold ${style.color}`}>
+                          {style.sign}{tx.amount} STX
+                        </span>
+                      )}
+                      {/* Para deploy sin monto, mostrar el tipo */}
+                      {tx.amountSTX === 0 && (
+                        <span className={`font-semibold text-sm sm:text-base ${style.color}`}>
+                          {style.label}
+                        </span>
+                      )}
+                      {/* Ver ↗ a la derecha */}
                       <a
                         href={tx.explorerUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-giants-orange hover:text-sandy-brown text-xs sm:text-sm font-semibold flex items-center gap-1 transition-colors"
+                        className="text-giants-orange hover:text-sandy-brown text-xs sm:text-sm font-semibold whitespace-nowrap ml-2"
                       >
                         Ver ↗
                       </a>
                     </div>
 
-                    {/* Monto */}
-                    {tx.amountSTX > 0 && (
-                      <p className={`text-base sm:text-lg font-bold ${style.color} mb-1`}>
-                        {style.sign}{tx.amount} STX
-                      </p>
-                    )}
-
-                    {/* Fee más pequeño */}
-                    {tx.fee && parseFloat(tx.fee) > 0 && (
-                      <p className="text-jet-700 text-[10px] sm:text-xs mb-3">
-                        Fee: {tx.fee} STX
-                      </p>
-                    )}
+                    {/* Segunda línea: Fee + Tipo (si hay monto) */}
+                    <div className="flex items-center justify-between mb-3">
+                      {tx.fee && parseFloat(tx.fee) > 0 && (
+                        <p className="text-jet-700 text-[10px] sm:text-xs">
+                          Fee: {tx.fee} STX
+                        </p>
+                      )}
+                      {tx.amountSTX > 0 && (
+                        <span className={`text-xs sm:text-sm font-semibold ${style.color}`}>
+                          {style.label}
+                        </span>
+                      )}
+                    </div>
 
                     {/* Estado pendiente */}
                     {tx.status === 'pending' && (
@@ -169,15 +179,17 @@ const TransactionHistory = ({ address, isOpen, onClose }) => {
                       </div>
                     )}
 
-                    {/* Dirección/Contrato compacto */}
-                    <div className="mb-2">
-                      <p className="text-seasalt font-mono text-[10px] sm:text-xs break-all">
-                        <span className="text-sandy-brown font-semibold">
-                          {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : tx.type === 'deploy' ? '📝 Contrato:' : 'Contrato: '}
-                        </span>
-                        {tx.type === 'deploy' ? '' : (tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient)}
-                      </p>
-                    </div>
+                    {/* Dirección/Contrato */}
+                    {tx.type !== 'deploy' && (
+                      <div className="mb-2">
+                        <p className="text-seasalt font-mono text-[10px] sm:text-xs break-all">
+                          <span className="text-sandy-brown font-semibold">
+                            {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : 'Contrato: '}
+                          </span>
+                          {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Memo si existe */}
                     {tx.memo && (
