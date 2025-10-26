@@ -7,6 +7,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Paleta KIKK style
+        'kikk-black': '#000000',
+        'kikk-white': '#FFFFFF',
+        'kikk-orange': '#FF9900',
+        'kikk-orange-light': '#FFA500',
+        'kikk-gray-dark': '#333333',
+        'kikk-gray': '#666666',
+        // Colores originales mantenidos para compatibilidad
         'black': {
           DEFAULT: '#000000',
           100: '#000000',
