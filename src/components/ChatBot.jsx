@@ -1,7 +1,7 @@
 /**
  * Componente de chat que permite interactuar con el contrato usando lenguaje natural
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useStacksContract } from '../hooks/useStacksContract';
 import { getSTXTransfers } from '../services/chatService';
 import TransactionHistory from './TransactionHistory';
@@ -32,6 +32,134 @@ Puedo ayudarte con:
   const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Estados para reconocimiento de voz
+  const [listening, setListening] = useState(false);
+  const [finalTranscript, setFinalTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [silenceDelay] = useState(1000); // 1 segundo de silencio para detener
+  const [selectedDeviceId, setSelectedDeviceId] = useState('');
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+
+  // Función para detener el reconocimiento de voz
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current && listening) {
+      clearTimeout(silenceTimerRef.current);
+      recognitionRef.current.stop();
+      setListening(false);
+    }
+  }, [listening]);
+
+  // Función para reiniciar el temporizador de silencio
+  const resetSilenceTimer = useCallback(() => {
+    clearTimeout(silenceTimerRef.current);
+    silenceTimerRef.current = setTimeout(() => {
+      if (listening) {
+        console.log("Deteniendo por silencio...");
+        stopListening();
+      }
+    }, silenceDelay);
+  }, [listening, silenceDelay, stopListening]);
+
+  // Configurar reconocimiento de voz
+  useEffect(() => {
+    // Obtener micrófono por defecto
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(() => navigator.mediaDevices.enumerateDevices())
+      .then((deviceInfos) => {
+        const mics = deviceInfos.filter((d) => d.kind === 'audioinput');
+        if (mics.length > 0) setSelectedDeviceId(mics[0].deviceId);
+      })
+      .catch((err) => console.error('Error micrófono:', err));
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("Tu navegador no soporta Speech Recognition API");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      // Reiniciar el temporizador de silencio cuando se detecta voz
+      resetSilenceTimer();
+      
+      let interim = '';
+      let final = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          final += result[0].transcript + ' ';
+        } else {
+          interim += result[0].transcript;
+        }
+      }
+
+      if (final) {
+        setFinalTranscript((prev) => prev + final);
+        setInterimTranscript('');
+      }
+      if (interim) {
+        setInterimTranscript(interim);
+      }
+    };
+
+    recognition.onend = () => {
+      clearTimeout(silenceTimerRef.current);
+      setListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Error en reconocimiento:', event.error);
+      clearTimeout(silenceTimerRef.current);
+      setListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    // Limpiar el temporizador al desmontar el componente
+    return () => {
+      clearTimeout(silenceTimerRef.current);
+    };
+  }, [resetSilenceTimer]);
+
+  // Actualizar el input con la transcripción
+  useEffect(() => {
+    if (listening) {
+      setInput(finalTranscript + interimTranscript);
+    }
+  }, [finalTranscript, interimTranscript, listening]);
+
+  // Función para iniciar el reconocimiento de voz
+  const startListening = () => {
+    if (recognitionRef.current && !listening) {
+      setFinalTranscript('');
+      setInterimTranscript('');
+      setInput('');
+      
+      navigator.mediaDevices
+        .getUserMedia({ 
+          audio: selectedDeviceId 
+            ? { deviceId: { exact: selectedDeviceId } } 
+            : true 
+        })
+        .then(() => {
+          recognitionRef.current.start();
+          setListening(true);
+          resetSilenceTimer(); // Iniciar el temporizador de silencio
+        })
+        .catch((err) => {
+          console.error('Error al iniciar micrófono:', err);
+          alert('⚠️ No se pudo acceder al micrófono. Verifica los permisos.');
+        });
+    }
+  };
 
   // Función para formatear mensajes del bot
   const formatBotMessage = (text) => {
@@ -755,33 +883,62 @@ Puedo ayudarte con:
             <div className="flex-1 bg-kikk-black rounded-sm border border-kikk-gray focus-within:border-kikk-orange transition-colors">
               <textarea
                 ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
+                value={listening ? (finalTranscript + interimTranscript) : input}
+                onChange={(e) => {
+                  if (!listening) {
+                    setInput(e.target.value);
+                  }
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && !listening) {
                     e.preventDefault();
                     handleSubmit(e);
                   }
                 }}
-                placeholder={isConnected ? "Escribe un mensaje..." : "Conecta tu wallet para comenzar"}
+                placeholder={
+                  listening 
+                    ? "🎤 Escuchando... Habla claramente" 
+                    : isConnected 
+                      ? "Escribe un mensaje..." 
+                      : "Conecta tu wallet para comenzar"
+                }
                 disabled={!isConnected || isChatLoading}
                 rows={1}
                 className="w-full px-4 py-3 bg-transparent text-kikk-white placeholder-kikk-gray resize-none focus:outline-none disabled:opacity-50 text-sm sm:text-base"
-                style={{ maxHeight: '120px' }}
+                style={{ 
+                  maxHeight: '120px',
+                  color: listening ? '#ff6b35' : '#ffffff' // Naranja cuando está escuchando
+                }}
               />
             </div>
 
-            {/* Botón de micrófono */}
-            <button
-              type="button"
-              disabled={!isConnected || isChatLoading}
-              className="p-3 bg-kikk-black hover:bg-kikk-gray-dark disabled:bg-kikk-gray border border-kikk-gray hover:border-kikk-orange rounded-sm transition-all duration-200 disabled:opacity-50"
-              title="Mensaje de voz"
-            >
-              <svg className="w-5 h-5 text-kikk-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            {/* Botones de micrófono - Mostrar solo uno a la vez */}
+            {!listening ? (
+              // Botón de INICIAR grabación (solo cuando NO está grabando)
+              <button
+                type="button"
+                onClick={startListening}
+                disabled={!isConnected || isChatLoading}
+                className="p-3 bg-kikk-black hover:bg-kikk-gray-dark disabled:bg-kikk-gray border border-kikk-gray hover:border-kikk-orange rounded-sm transition-all duration-200 disabled:opacity-50"
+                title="Iniciar grabación de voz"
+              >
+                <svg className="w-5 h-5 text-kikk-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              </button>
+            ) : (
+              // Botón de DETENER grabación (solo cuando SÍ está grabando)
+              <button
+                type="button"
+                onClick={stopListening}
+                className="p-3 bg-red-600 hover:bg-red-700 border border-red-500 rounded-sm transition-all duration-200 animate-pulse"
+                title="Detener grabación"
+              >
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <rect x="6" y="6" width="12" height="12" rx="2" />
               </svg>
             </button>
+            )}
 
             {/* Botón de enviar */}
             <button
