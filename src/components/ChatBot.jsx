@@ -658,17 +658,12 @@ Puedo ayudarte con:
             >
               💰 Balance
             </button>
-            <button
-              onClick={() => handleShortcut('Muéstrame mis últimas transacciones')}
-              className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
-            >
-              📜 Transacciones
-            </button>
+            
             <button
               onClick={() => handleShortcut('¿Cómo puedo hacer una transferencia?')}
               className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
             >
-              💸 Enviar STX
+              💸 Quiero enviar STX
             </button>
           </div>
 
