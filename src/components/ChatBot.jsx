@@ -3,21 +3,23 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useStacksContract } from '../hooks/useStacksContract';
+import { getSTXTransfers } from '../services/chatService';
+import TransactionHistory from './TransactionHistory';
 import logoStack from '../assets/logo_stack.png';
+import logoChatBot from '../assets/logoChatBot.png';
 
 const ChatBot = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
     {
       id: 0,
-      text: `¡Hola! 👋 Soy tu asistente de Stacks.
+      text: `¡Hola amigo! 👋 Soy tu asistente de Stacks.
 
 Puedo ayudarte con:
 
-💰 **Consultar tu balance** de STX
-📤 **Realizar transferencias** seguras
-📜 **Ver historial** de transacciones
-🔍 **Explorar contratos** Clarity
+ **Consultar tu balance** de STX
+ **Realizar transferencias** seguras
+ **Ver inversiones** 
 
 ¿En qué puedo ayudarte hoy?`,
       sender: 'bot'
@@ -25,6 +27,9 @@ Puedo ayudarte con:
   ]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showContactsMenu, setShowContactsMenu] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -189,22 +194,38 @@ Puedo ayudarte con:
     cancelTransfer
   } = useStacksContract();
 
-  // Mock data para contactos y transacciones
+  // Mock data para contactos
   const contacts = [
     { id: 1, name: 'Alice', address: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM' },
     { id: 2, name: 'Bob', address: 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG' },
     { id: 3, name: 'Charlie', address: 'ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC' }
   ];
 
-  const transactions = [
-    { id: 1, type: 'Enviado', amount: '10 STX', to: 'Alice', date: '24/10/2025' },
-    { id: 2, type: 'Recibido', amount: '5 STX', from: 'Bob', date: '23/10/2025' },
-    { id: 3, type: 'Enviado', amount: '2.5 STX', to: 'Charlie', date: '22/10/2025' }
-  ];
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Cargar historial de transacciones cuando el usuario se conecta
+  useEffect(() => {
+    const loadRecentTransactions = async () => {
+      if (isConnected && userAddress) {
+        setLoadingHistory(true);
+        try {
+          const txs = await getSTXTransfers(userAddress, 10); // Solo las últimas 10
+          setRecentTransactions(txs);
+        } catch (error) {
+          console.error('Error cargando transacciones:', error);
+          setRecentTransactions([]);
+        } finally {
+          setLoadingHistory(false);
+        }
+      } else {
+        setRecentTransactions([]);
+      }
+    };
+
+    loadRecentTransactions();
+  }, [isConnected, userAddress]);
 
   useEffect(() => {
     if (chatResponse !== null) {
@@ -243,6 +264,53 @@ Puedo ayudarte con:
     textareaRef.current?.focus();
   };
 
+  // Función para consultar el balance usando Hiro API
+  const handleBalanceCheck = async () => {
+    if (!isConnected || !userAddress) {
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: '🔒 Por favor conecta tu wallet primero para consultar el balance.',
+        sender: 'bot'
+      }]);
+      return;
+    }
+
+    // Mostrar mensaje de carga
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      text: '💰 Consultando tu balance...',
+      sender: 'bot'
+    }]);
+
+    try {
+      // Consultar balance desde Hiro API
+      const HIRO_API = "https://api.testnet.hiro.so"; // Cambiar a mainnet si es necesario
+      const response = await fetch(`${HIRO_API}/extended/v1/address/${userAddress}/balances`);
+      
+      if (!response.ok) {
+        throw new Error('Error al consultar el balance');
+      }
+
+      const data = await response.json();
+      const balanceInMicroSTX = data.stx.balance;
+      const balanceInSTX = (balanceInMicroSTX / 1_000_000).toFixed(6);
+
+      // Mostrar el balance en el chat
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: `💰 **Tu saldo es ${balanceInSTX} STX**\n\n📊 Detalles:\n• Balance disponible: ${balanceInSTX} STX\n• Dirección: ${userAddress.substring(0, 10)}...${userAddress.substring(userAddress.length - 6)}`,
+        sender: 'bot'
+      }]);
+    } catch (error) {
+      console.error('Error al consultar balance:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: '❌ Error al consultar el balance. Por favor intenta nuevamente.',
+        sender: 'bot'
+      }]);
+    }
+  };
+
   const handleContactSelect = (contact) => {
     setInput(`Enviar a ${contact.name} (${contact.address})`);
     setShowContactsMenu(false);
@@ -250,22 +318,22 @@ Puedo ayudarte con:
   };
 
   return (
-    <div className="flex h-screen bg-licorice overflow-hidden">
+    <div className="flex h-screen bg-kikk-black overflow-hidden font-mono">
       {/* Sidebar - Panel lateral */}
-      <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-jet border-r border-jet-700 transition-transform duration-300 overflow-y-auto`}>
+      <div className={`sidebar-scroll ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-kikk-gray-dark border-r border-kikk-gray transition-transform duration-300 overflow-y-auto`}>
         <div className="p-4">
           {/* Logo y título del sidebar */}
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-jet-600">
-            <img src={logoStack} alt="Logo" className="w-10 h-10 rounded-full border-2 border-giants-orange shadow-lg shadow-giants-orange/30" />
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-kikk-gray">
+            <img src={logoStack} alt="Logo" className="w-10 h-10 rounded-full border-2 border-kikk-orange shadow-lg shadow-kikk-orange/30" />
             <div>
-              <h3 className="text-seasalt font-bold text-lg">Clarity Chat</h3>
-              <p className="text-jet-800 text-xs">Asistente Blockchain</p>
+              <h3 className="text-kikk-white font-bold text-lg tracking-wider">sBTC ChatBot</h3>
+              <p className="text-kikk-gray text-xs">Agente Blockchain en STX</p>
             </div>
           </div>
 
           {/* Contactos */}
           <div className="mb-6">
-            <h4 className="text-seasalt text-sm font-semibold mb-3 flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
+            <h4 className="text-kikk-white text-sm font-semibold mb-3 flex items-center gap-2 bg-kikk-orange px-3 py-2 rounded-sm uppercase tracking-widest">
               <span className="text-lg">👥</span> 
               <span>Contactos</span>
             </h4>
@@ -274,13 +342,13 @@ Puedo ayudarte con:
                 <button
                   key={contact.id}
                   onClick={() => handleContactSelect(contact)}
-                  className="w-full text-left p-3 rounded-lg bg-licorice-300 hover:bg-jet-400 transition-all duration-200 border border-jet-600 hover:border-giants-orange hover:shadow-lg hover:shadow-giants-orange/20 group"
+                  className="w-full text-left p-3 rounded-sm bg-kikk-black hover:bg-kikk-gray-dark transition-all duration-200 border border-kikk-gray hover:border-kikk-orange group"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm group-hover:scale-110 transition-transform">👤</span>
-                    <p className="text-seasalt font-medium text-sm">{contact.name}</p>
+                    <p className="text-kikk-white font-medium text-sm">{contact.name}</p>
                   </div>
-                  <p className="text-jet-800 text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
+                  <p className="text-kikk-gray text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
                 </button>
               ))}
             </div>
@@ -288,33 +356,152 @@ Puedo ayudarte con:
 
           {/* Historial de Transacciones */}
           <div>
-            <h4 className="text-seasalt text-sm font-semibold mb-3 flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
-              <span className="text-lg">📜</span> 
-              <span>Historial</span>
-            </h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-kikk-white text-sm font-semibold flex items-center gap-2 bg-kikk-orange px-3 py-2 rounded-sm uppercase tracking-widest">
+                <span className="text-lg">📜</span> 
+                <span>Historial</span>
+              </h4>
+              {isConnected && userAddress && recentTransactions.length > 0 && (
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  className="text-kikk-orange hover:text-kikk-orange-light text-xs font-semibold transition-colors uppercase tracking-wider"
+                  title="Ver historial completo"
+                >
+                  Ver todo →
+                </button>
+              )}
+            </div>
             <div className="space-y-2">
-              {transactions.map(tx => (
-                <div key={tx.id} className="p-3 rounded-lg bg-licorice-300 border border-jet-600 hover:border-jet-500 transition-colors">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className={`text-xs font-semibold flex items-center gap-1 ${tx.type === 'Enviado' ? 'text-red-400' : 'text-green-400'}`}>
-                      <span className="text-base">{tx.type === 'Enviado' ? '📤' : '📥'}</span>
-                      <span>{tx.type}</span>
-                    </span>
-                    <span className="text-sandy-brown text-sm font-bold flex items-center gap-1">
-                      <span className="text-xs">💰</span>
-                      {tx.amount}
-                    </span>
-                  </div>
-                  <p className="text-jet-900 text-xs flex items-center gap-1">
-                    <span>👤</span>
-                    {tx.to || tx.from}
-                  </p>
-                  <p className="text-jet-700 text-[10px] mt-1 flex items-center gap-1">
-                    <span>📅</span>
-                    {tx.date}
+              {!isConnected || !userAddress ? (
+                <div className="p-4 rounded-sm bg-kikk-black border border-kikk-gray text-center">
+                  <p className="text-kikk-gray text-xs uppercase tracking-wider">
+                    🔒 Conecta tu wallet para ver el historial
                   </p>
                 </div>
-              ))}
+              ) : loadingHistory ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-giants-orange"></div>
+                  <p className="text-jet-800 text-xs mt-2">Cargando...</p>
+                </div>
+              ) : recentTransactions.length === 0 ? (
+                <div className="p-4 rounded-lg bg-licorice-300 border border-jet-600 text-center">
+                  <p className="text-4xl mb-2">📭</p>
+                  <p className="text-jet-800 text-xs">
+                    No hay transacciones aún
+                  </p>
+                </div>
+              ) : (
+                recentTransactions.map((tx, index) => {
+                  // Determinar el icono y color según el tipo de transacción
+                  // YA NO MOSTRAMOS FALLIDAS (se filtran en el servicio)
+                  const getTransactionStyle = () => {
+                    switch (tx.type) {
+                      case 'sent':
+                        return {
+                          icon: '📤',
+                          label: 'Enviado',
+                          color: 'text-red-400',
+                          sign: '-'
+                        };
+                      case 'received':
+                        return {
+                          icon: '📥',
+                          label: 'Recibido',
+                          color: 'text-green-400',
+                          sign: '+'
+                        };
+                      case 'contract':
+                        return {
+                          icon: '📝',
+                          label: tx.displayType,
+                          color: 'text-blue-400',
+                          sign: '-' // Los contratos que envían STX son negativos
+                        };
+                      case 'deploy':
+                        return {
+                          icon: '🚀',
+                          label: 'Deploy',
+                          color: 'text-purple-400',
+                          sign: ''
+                        };
+                      default:
+                        return {
+                          icon: '📋',
+                          label: tx.displayType || 'Otro',
+                          color: 'text-yellow-400',
+                          sign: ''
+                        };
+                    }
+                  };
+
+                  const style = getTransactionStyle();
+
+                  return (
+                    <div
+                      key={tx.txid + index}
+                      className="p-3 rounded-sm border transition-colors bg-kikk-black border-kikk-gray hover:border-kikk-orange"
+                    >
+                      {/* Primera línea: Monto + Tipo/Ver */}
+                      <div className="flex items-start justify-between mb-1">
+                        {/* Monto a la izquierda */}
+                        {tx.amountSTX > 0 && (
+                          <span className={`text-base font-bold ${style.color}`}>
+                            {style.sign}{tx.amount} STX
+                          </span>
+                        )}
+                        {/* Para deploy sin monto, mostrar el tipo */}
+                        {tx.amountSTX === 0 && (
+                          <span className={`text-sm font-semibold ${style.color}`}>
+                            {style.label}
+                          </span>
+                        )}
+                        {/* Ver ↗ a la derecha */}
+                        <a
+                          href={tx.explorerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-kikk-orange hover:text-kikk-orange-light text-[10px] font-semibold whitespace-nowrap ml-2 uppercase tracking-wider"
+                        >
+                          Ver ↗
+                        </a>
+                      </div>
+
+                      {/* Segunda línea: Fee + Tipo (si hay monto) */}
+                      <div className="flex items-center justify-between mb-2">
+                        {tx.fee && parseFloat(tx.fee) > 0 && (
+                          <p className="text-kikk-gray text-[10px]">
+                            Fee: {tx.fee} STX
+                          </p>
+                        )}
+                        {tx.amountSTX > 0 && (
+                          <span className={`text-[10px] font-semibold ${style.color}`}>
+                            {style.label}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Mostrar estado si es pendiente */}
+                      {tx.status === 'pending' && (
+                        <div className="mb-2 px-2 py-1 rounded text-[10px] font-semibold bg-yellow-600 bg-opacity-20 text-yellow-400">
+                          ⏳ Pendiente
+                        </div>
+                      )}
+                      
+                      {/* Dirección/Contrato */}
+                      {tx.type !== 'deploy' && (
+                        <div className="mb-1">
+                          <p className="text-kikk-gray text-[10px] font-mono truncate">
+                            <span className="text-kikk-white font-semibold">
+                              {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : 'Contrato: '}
+                            </span>
+                            {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -331,27 +518,27 @@ Puedo ayudarte con:
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-screen">
         {/* Header */}
-        <div className="bg-jet border-b border-jet-700 p-3 sm:p-4 flex items-center justify-between shadow-lg shadow-licorice/50">
+        <div className="bg-kikk-gray-dark border-b border-kikk-gray p-3 sm:p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Botón hamburguesa para móvil */}
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-licorice transition-all duration-200 hover:scale-105 border border-transparent hover:border-giants-orange"
+              className="lg:hidden p-2 rounded-sm hover:bg-kikk-black transition-all duration-200 border border-transparent hover:border-kikk-orange"
               aria-label="Toggle sidebar"
             >
-              <svg className="w-6 h-6 text-giants-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-kikk-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             
-            <img src={logoStack} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-giants-orange shadow-md hover:shadow-giants-orange/50 transition-shadow" />
+            <img src={logoStack} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-kikk-orange shadow-md" />
             <div>
-              <h2 className="text-seasalt font-bold text-sm sm:text-base flex items-center gap-2">
-                <span>Clarity Chat</span>
-                {isConnected && <span className="text-green-400 text-xs">●</span>}
+              <h2 className="text-kikk-white font-bold text-sm sm:text-base flex items-center gap-2 uppercase tracking-wider">
+                <span>sBTC ChatBot</span>
+                {isConnected && <span className="text-kikk-orange text-xs">●</span>}
               </h2>
               {isConnected && (
-                <p className="text-jet-900 text-xs font-mono flex items-center gap-1">
+                <p className="text-kikk-gray text-xs font-mono flex items-center gap-1">
                   <span className="text-[10px]">📬</span>
                   {userAddress ? `${userAddress.substring(0, 8)}...` : ''}
                 </p>
@@ -362,14 +549,14 @@ Puedo ayudarte con:
           {/* Wallet Info */}
           {isConnected ? (
             <div className="flex items-center gap-2">
-              <div className="hidden sm:block text-right bg-licorice bg-opacity-50 px-3 py-2 rounded-lg border border-jet-700">
-                <p className="text-sandy-brown font-bold text-sm flex items-center justify-end gap-1">
+              <div className="hidden sm:block text-right bg-kikk-black px-3 py-2 rounded-sm border border-kikk-gray">
+                <p className="text-kikk-orange font-bold text-sm flex items-center justify-end gap-1 uppercase tracking-wider">
                   <span className="text-xs">💰</span>
                   {userBalance} STX
                 </p>
                 <button 
                   onClick={disconnectWallet}
-                  className="text-jet-900 hover:text-seasalt text-xs transition-colors hover:underline"
+                  className="text-kikk-gray hover:text-kikk-white text-xs transition-colors uppercase tracking-wider"
                 >
                   Desconectar ⚡
                 </button>
@@ -378,7 +565,7 @@ Puedo ayudarte con:
           ) : (
             <button 
               onClick={connectWallet}
-              className="bg-giants-orange hover:bg-rust text-seasalt font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-all duration-200 shadow-lg hover:shadow-giants-orange/50 hover:scale-105 flex items-center gap-2"
+              className="bg-kikk-orange hover:bg-kikk-orange-light text-kikk-black font-bold px-4 py-2 rounded-sm text-xs sm:text-sm transition-all duration-200 uppercase tracking-wider flex items-center gap-2"
             >
               <span className="hidden sm:inline">🔗</span>
               <span>Conectar Wallet</span>
@@ -386,8 +573,8 @@ Puedo ayudarte con:
           )}
         </div>
 
-        {/* Messages Area - Estilo ChatGPT */}        {/* Messages Area - Estilo ChatGPT */}
-        <div className="flex-1 overflow-y-auto bg-licorice">
+        {/* Messages Area - Estilo KIKK */}
+        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-kikk-black via-kikk-dark to-kikk-black">
           <div className="max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 space-y-3 sm:space-y-4 md:space-y-6">
             {messages.map(message => (
               <div 
@@ -395,20 +582,20 @@ Puedo ayudarte con:
                 className={`flex gap-2 sm:gap-3 md:gap-4 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 {/* Avatar */}
-                <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base shadow-lg ${
+                <div className={`flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-sm flex items-center justify-center text-xs sm:text-sm md:text-base ${
                   message.sender === 'user' 
-                    ? 'bg-giants-orange text-seasalt' 
-                    : 'bg-rust text-seasalt'
+                    ? 'bg-kikk-orange text-kikk-black border-2 border-kikk-orange' 
+                    : 'bg-transparent'
                 }`}>
-                  {message.sender === 'user' ? '👤' : '🤖'}
+                  {message.sender === 'user' ? '👤' : <img src={logoChatBot} alt="Bot" className="w-full h-full rounded-sm object-cover" />}
                 </div>
                 
                 {/* Message Content */}
                 <div className={`flex-1 max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className={`inline-block px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 rounded-xl sm:rounded-2xl shadow-md ${
+                  <div className={`inline-block px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 rounded-sm ${
                     message.sender === 'user'
-                      ? 'bg-giants-orange text-seasalt font-medium'
-                      : 'bg-jet text-seasalt border border-jet-600'
+                      ? 'bg-kikk-gray-dark text-kikk-white font-medium border border-kikk-gray'
+                      : 'bg-transparent text-kikk-white'
                   }`}>
                     {message.sender === 'bot' ? (
                       // Renderizar mensaje del bot con formato especial
@@ -423,7 +610,7 @@ Puedo ayudarte con:
                     )}
                   </div>
                   {/* Timestamp opcional */}
-                  <p className={`text-[10px] sm:text-xs text-jet-700 mt-1 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                  <p className={`text-[10px] sm:text-xs text-kikk-gray mt-1 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
                     {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -432,8 +619,8 @@ Puedo ayudarte con:
             
             {isChatLoading && (
               <div className="flex gap-2 sm:gap-3 md:gap-4">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-rust flex items-center justify-center text-xs sm:text-sm md:text-base text-seasalt shadow-lg">
-                  🤖
+                <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-transparent flex items-center justify-center shadow-lg overflow-hidden">
+                  <img src={logoChatBot} alt="Bot" className="w-full h-full rounded-full object-cover" />
                 </div>
                 <div className="bg-jet px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 rounded-xl sm:rounded-2xl border border-jet-600 shadow-md">
                   <div className="flex gap-1 sm:gap-1.5">
@@ -508,25 +695,20 @@ Puedo ayudarte con:
           </div>
         </div>
 
-        {/* Input Area - Estilo WhatsApp */}
-        <div className="bg-jet border-t border-jet-700 p-3 sm:p-4">
+        {/* Input Area - Estilo KIKK */}
+        <div className="bg-kikk-gray-dark border-t border-kikk-gray p-3 sm:p-4">
           {/* Atajos rápidos */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
             <button
-              onClick={() => handleShortcut('¿Cuál es mi balance?')}
-              className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
+              onClick={handleBalanceCheck}
+              className="px-4 py-2 bg-kikk-black hover:bg-kikk-gray-dark text-kikk-white rounded-sm text-xs sm:text-sm whitespace-nowrap border border-kikk-gray hover:border-kikk-orange transition-colors uppercase tracking-wider"
             >
               💰 Balance
             </button>
-            <button
-              onClick={() => handleShortcut('Muéstrame mis últimas transacciones')}
-              className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
-            >
-              📜 Transacciones
-            </button>
+            
             <button
               onClick={() => handleShortcut('¿Cómo puedo hacer una transferencia?')}
-              className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
+              className="px-4 py-2 bg-kikk-black hover:bg-kikk-gray-dark text-kikk-white rounded-sm text-xs sm:text-sm whitespace-nowrap border border-kikk-gray hover:border-kikk-orange transition-colors uppercase tracking-wider"
             >
               💸 Enviar STX
             </button>
@@ -540,28 +722,28 @@ Puedo ayudarte con:
                 type="button"
                 onClick={() => setShowContactsMenu(!showContactsMenu)}
                 disabled={!isConnected}
-                className="p-3 bg-licorice hover:bg-jet-400 disabled:bg-jet-200 rounded-full transition-colors border border-jet-600"
+                className="p-3 bg-kikk-black hover:bg-kikk-gray-dark disabled:bg-kikk-gray rounded-sm transition-colors border border-kikk-gray"
                 title="Contactos"
               >
-                <svg className="w-5 h-5 text-seasalt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-kikk-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </button>
 
               {/* Menú de contactos desplegable */}
               {showContactsMenu && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-jet rounded-lg shadow-xl border border-jet-600 max-h-60 overflow-y-auto">
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-kikk-gray-dark rounded-sm shadow-xl border border-kikk-gray max-h-60 overflow-y-auto">
                   <div className="p-2">
-                    <p className="text-jet-900 text-xs font-semibold mb-2 px-2">Seleccionar contacto</p>
+                    <p className="text-kikk-gray text-xs font-semibold mb-2 px-2 uppercase tracking-wider">Seleccionar contacto</p>
                     {contacts.map(contact => (
                       <button
                         key={contact.id}
                         type="button"
                         onClick={() => handleContactSelect(contact)}
-                        className="w-full text-left p-2 rounded hover:bg-licorice transition-colors"
+                        className="w-full text-left p-2 rounded-sm hover:bg-kikk-black transition-colors border border-transparent hover:border-kikk-orange"
                       >
-                        <p className="text-seasalt text-sm font-medium">{contact.name}</p>
-                        <p className="text-jet-800 text-xs font-mono truncate">{contact.address}</p>
+                        <p className="text-kikk-white text-sm font-medium">{contact.name}</p>
+                        <p className="text-kikk-gray text-xs font-mono truncate">{contact.address}</p>
                       </button>
                     ))}
                   </div>
@@ -570,7 +752,7 @@ Puedo ayudarte con:
             </div>
 
             {/* Textarea expandible */}
-            <div className="flex-1 bg-licorice rounded-2xl border border-jet-600 focus-within:border-giants-orange transition-colors">
+            <div className="flex-1 bg-kikk-black rounded-sm border border-kikk-gray focus-within:border-kikk-orange transition-colors">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -584,7 +766,7 @@ Puedo ayudarte con:
                 placeholder={isConnected ? "Escribe un mensaje..." : "Conecta tu wallet para comenzar"}
                 disabled={!isConnected || isChatLoading}
                 rows={1}
-                className="w-full px-4 py-3 bg-transparent text-seasalt placeholder-jet-800 resize-none focus:outline-none disabled:opacity-50 text-sm sm:text-base"
+                className="w-full px-4 py-3 bg-transparent text-kikk-white placeholder-kikk-gray resize-none focus:outline-none disabled:opacity-50 text-sm sm:text-base"
                 style={{ maxHeight: '120px' }}
               />
             </div>
@@ -593,17 +775,17 @@ Puedo ayudarte con:
             <button
               type="submit"
               disabled={!isConnected || isChatLoading || !input.trim()}
-              className="p-3 bg-giants-orange hover:bg-rust disabled:bg-jet-200 disabled:border disabled:border-jet-600 rounded-full transition-all duration-200 disabled:opacity-50"
+              className="p-3 bg-kikk-orange hover:bg-kikk-orange-light disabled:bg-kikk-gray disabled:border disabled:border-kikk-gray rounded-sm transition-all duration-200 disabled:opacity-50"
               title={input.trim() ? "Enviar" : "Mensaje de voz"}
             >
               {input.trim() ? (
                 // Icono de enviar
-                <svg className="w-5 h-5 text-seasalt" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-kikk-black" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                 </svg>
               ) : (
                 // Icono de micrófono
-                <svg className="w-5 h-5 text-jet-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-kikk-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                 </svg>
               )}
@@ -611,6 +793,13 @@ Puedo ayudarte con:
           </form>
         </div>
       </div>
+
+      {/* Modal de Historial de Transacciones */}
+      <TransactionHistory
+        address={userAddress}
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+      />
     </div>
   );
 };

@@ -11,7 +11,7 @@ const LandingPage = ({ onStartChat }) => {
         <div className="mb-6 sm:mb-8 md:mb-10 flex justify-center">
           <img 
             src={logoStack}
-            alt="Clarity Chat Logo" 
+            alt="sBTC ChatBot Logo" 
             className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full object-cover shadow-2xl shadow-giants-orange/40 border-4 border-giants-orange animate-pulse"
           />
         </div>

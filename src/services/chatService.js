@@ -129,3 +129,158 @@ export const checkTransaction = async (txid) => {
     throw error;
   }
 };
+
+/**
+ * Obtiene el historial de transacciones de una dirección usando la API de Hiro
+ * @param {string} address - Dirección de la wallet
+ * @param {number} limit - Número máximo de transacciones a obtener (default: 50)
+ * @param {number} offset - Offset para paginación (default: 0)
+ * @returns {Promise} Objeto con transacciones y metadatos
+ */
+export const getTransactionHistory = async (address, limit = 50, offset = 0) => {
+  try {
+    const HIRO_API = "https://api.testnet.hiro.so"; // Cambiar a mainnet si es necesario
+    const response = await fetch(
+      `${HIRO_API}/extended/v1/address/${address}/transactions?limit=${limit}&offset=${offset}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Error al obtener el historial de transacciones');
+    }
+
+    const data = await response.json();
+    
+    // Formatear las transacciones para facilitar su uso
+    const formattedTransactions = data.results.map(tx => ({
+      txid: tx.tx_id,
+      type: tx.tx_type,
+      status: tx.tx_status,
+      sender: tx.sender_address,
+      fee: tx.fee_rate,
+      nonce: tx.nonce,
+      blockHeight: tx.block_height,
+      blockTime: tx.burn_block_time,
+      timestamp: new Date(tx.burn_block_time * 1000).toISOString(),
+      // Para transferencias STX
+      amount: tx.tx_type === 'token_transfer' ? tx.token_transfer?.amount : null,
+      recipient: tx.tx_type === 'token_transfer' ? tx.token_transfer?.recipient_address : null,
+      memo: tx.tx_type === 'token_transfer' ? tx.token_transfer?.memo : null,
+      // Para contract calls
+      contractCall: tx.tx_type === 'contract_call' ? {
+        contractId: tx.contract_call?.contract_id,
+        functionName: tx.contract_call?.function_name,
+        functionArgs: tx.contract_call?.function_args
+      } : null,
+      // URL del explorer
+      explorerUrl: `https://explorer.hiro.so/txid/${tx.tx_id}?chain=testnet`
+    }));
+
+    return {
+      total: data.total,
+      limit: data.limit,
+      offset: data.offset,
+      transactions: formattedTransactions
+    };
+  } catch (error) {
+    console.error('Error al obtener el historial de transacciones:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene TODAS las transacciones (transferencias, contract calls, exitosas y fallidas)
+ * @param {string} address - Dirección de la wallet
+ * @param {number} limit - Número máximo de transacciones
+ * @returns {Promise} Array de todas las transacciones
+ */
+export const getSTXTransfers = async (address, limit = 50) => {
+  try {
+    const history = await getTransactionHistory(address, limit);
+    
+    // FILTRAR: Solo transacciones exitosas o pendientes (sin fallidas)
+    const filteredTransactions = history.transactions.filter(tx => 
+      tx.status === 'success' || tx.status === 'pending'
+    );
+    
+    return filteredTransactions.map(tx => {
+      // Determinar el tipo de transacción
+      let type = 'unknown';
+      let amount = 0;
+      let recipient = '';
+      let displayType = '';
+      
+      if (tx.type === 'token_transfer') {
+        // Transferencia STX normal
+        type = tx.sender === address ? 'sent' : 'received';
+        amount = tx.amount ? (tx.amount / 1_000_000).toFixed(6) : '0';
+        recipient = tx.recipient;
+        displayType = type === 'sent' ? 'Enviado' : 'Recibido';
+      } else if (tx.type === 'contract_call') {
+        // Llamada a contrato
+        type = 'contract';
+        displayType = 'Contrato: ' + (tx.contractCall?.functionName || 'unknown');
+        recipient = tx.contractCall?.contractId || '';
+        
+        // ⭐ INTENTAR EXTRAER EL MONTO DE LOS ARGUMENTOS DEL CONTRATO
+        let contractAmount = 0;
+        try {
+          if (tx.contractCall && tx.contractCall.functionArgs && Array.isArray(tx.contractCall.functionArgs)) {
+            // Buscar argumento llamado 'amount', 'amt', 'value', 'val'
+            const amountArg = tx.contractCall.functionArgs.find(arg => 
+              arg.name === 'amount' || arg.name === 'amt' || arg.name === 'value' || arg.name === 'val'
+            );
+            
+            if (amountArg && amountArg.repr) {
+              // El formato de Clarity es "u10000000" para uint
+              const match = amountArg.repr.match(/u(\d+)/);
+              if (match) {
+                contractAmount = parseInt(match[1]) / 1_000_000;
+              }
+            }
+          }
+        } catch (error) {
+          console.log('No se pudo extraer monto del contrato:', error);
+        }
+        
+        // Si encontramos un monto en los argumentos, usarlo; si no, mostrar 0
+        amount = contractAmount > 0 ? contractAmount.toFixed(6) : '0';
+      } else if (tx.type === 'smart_contract') {
+        // Despliegue de contrato
+        type = 'deploy';
+        displayType = 'Deploy Contrato';
+        amount = '0'; // Los deploys no tienen monto
+      } else {
+        // Otros tipos
+        type = 'other';
+        displayType = tx.type || 'Otro';
+        amount = '0';
+      }
+
+      return {
+        txid: tx.txid,
+        date: new Date(tx.timestamp).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        amount: amount,
+        amountSTX: parseFloat(amount),
+        sender: tx.sender,
+        recipient: recipient || tx.recipient || 'N/A',
+        type: type, // sent, received, contract, deploy, other
+        displayType: displayType, // Para mostrar en la UI
+        status: tx.status, // success, pending (ya no fallidas)
+        explorerUrl: tx.explorerUrl,
+        memo: tx.memo,
+        fee: tx.fee ? (tx.fee / 1_000_000).toFixed(6) : '0',
+        txType: tx.type, // token_transfer, contract_call, etc.
+        blockHeight: tx.blockHeight
+      };
+    });
+  } catch (error) {
+    console.error('Error al obtener transferencias STX:', error);
+    throw error;
+  }
+};

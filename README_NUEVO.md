@@ -1,4 +1,4 @@
-# Clarity Chat 🚀
+# sBTC ChatBot 🚀
 
 Aplicación de chatbot inteligente para interactuar con contratos Clarity en la blockchain de Stacks usando lenguaje natural.
 

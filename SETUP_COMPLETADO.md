@@ -1,4 +1,4 @@
-# 🎉 Proyecto Clarity Chatbot - Configuración Completada
+# 🎉 Proyecto sBTC ChatBot - Configuración Completada
 
 ## ✅ Tareas Realizadas
 
