@@ -11,3 +11,32 @@ body {
   min-height: 100vh;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
+
+/* 🎨 Estilo moderno y minimalista para scrollbar del sidebar */
+/* Para navegadores Webkit (Chrome, Safari, Edge) */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 8px; /* Barra delgada */
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2); /* Fondo oscuro transparente */
+  border-radius: 10px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #d97706; /* giants-orange */
+  border-radius: 10px; /* Bordes redondeados */
+  transition: all 0.3s ease;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #ea580c; /* sandy-brown - efecto brillante al hover */
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.5); /* Brillo naranja */
+}
+
+/* Para Firefox */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d97706 rgba(0, 0, 0, 0.2);
+}
+

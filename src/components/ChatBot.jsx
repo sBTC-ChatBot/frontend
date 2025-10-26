@@ -320,7 +320,7 @@ Puedo ayudarte con:
   return (
     <div className="flex h-screen bg-licorice overflow-hidden">
       {/* Sidebar - Panel lateral */}
-      <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-jet border-r border-jet-700 transition-transform duration-300 overflow-y-auto`}>
+      <div className={`sidebar-scroll ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-jet border-r border-jet-700 transition-transform duration-300 overflow-y-auto`}>
         <div className="p-4">
           {/* Logo y título del sidebar */}
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-jet-600">
