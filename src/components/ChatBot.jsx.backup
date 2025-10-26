@@ -273,7 +273,131 @@ Puedo ayudarte con:
   return (
     <div className="flex h-screen bg-licorice overflow-hidden">
       {/* Sidebar - Panel lateral */}
-      <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-jet border-r border-jet-700 transition-transform duration-300 overflow-y-auto`}>
+            {/* Sidebar - Panel lateral */}
+      <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-jet border-r border-jet-700 transition-transform duration-300 flex flex-col`}>
+        <div className="p-4 border-b border-jet-700">
+          {/* Logo y título del sidebar */}
+          <div className="flex items-center gap-3 mb-4">
+            <img src={logoStack} alt="Logo" className="w-12 h-12" />
+            <div>
+              <h3 className="text-seasalt font-bold text-lg">Clarity Chat</h3>
+              <p className="text-jet-800 text-xs">Asistente Blockchain</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Contenedor scrolleable dividido en dos secciones */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Sección de Contactos - Mitad superior */}
+          <div className="flex-1 overflow-y-auto p-4 border-b border-jet-700">
+            <h4 className="text-seasalt text-sm font-semibold mb-3 flex items-center gap-2 bg-gradient-to-r from-giants-orange to-transparent px-3 py-2 rounded-lg sticky top-0 z-10">
+              <span className="text-lg">👥</span> 
+              <span>Contactos</span>
+            </h4>
+            <div className="space-y-2">
+              {contacts.map(contact => (
+                <button
+                  key={contact.id}
+                  onClick={() => handleContactSelect(contact)}
+                  className="w-full text-left p-3 rounded-lg bg-licorice-300 hover:bg-jet-400 transition-all duration-200 border border-jet-600 hover:border-giants-orange hover:shadow-lg hover:shadow-giants-orange/20 group"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm group-hover:scale-110 transition-transform">👤</span>
+                    <p className="text-seasalt font-medium text-sm">{contact.name}</p>
+                  </div>
+                  <p className="text-jet-800 text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sección de Historial - Mitad inferior */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex items-center justify-between mb-3 sticky top-0 bg-jet z-10 pb-2">
+              <h4 className="text-seasalt text-sm font-semibold flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
+                <span className="text-lg">📜</span> 
+                <span>Historial</span>
+              </h4>
+              {isConnected && userAddress && recentTransactions.length > 0 && (
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  className="text-giants-orange hover:text-sandy-brown text-xs font-semibold transition-colors"
+                  title="Ver historial completo"
+                >
+                  Ver todo →
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {!isConnected || !userAddress ? (
+                <div className="p-4 rounded-lg bg-jet-600 bg-opacity-30 border border-jet-600 text-center">
+                  <p className="text-jet-800 text-xs">
+                    🔒 Conecta tu wallet para ver el historial
+                  </p>
+                </div>
+              ) : loadingHistory ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-giants-orange"></div>
+                  <p className="text-jet-800 text-xs mt-2">Cargando...</p>
+                </div>
+              ) : recentTransactions.length === 0 ? (
+                <div className="p-4 rounded-lg bg-licorice-300 border border-jet-600 text-center">
+                  <p className="text-4xl mb-2">📭</p>
+                  <p className="text-jet-800 text-xs">
+                    No hay transacciones aún
+                  </p>
+                </div>
+              ) : (
+                recentTransactions.map((tx, index) => (
+                  <div
+                    key={tx.txid + index}
+                    className="p-3 rounded-lg bg-licorice-300 border border-jet-600 hover:border-jet-500 transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`text-xs font-semibold flex items-center gap-1 ${
+                        tx.type === 'sent' ? 'text-red-400' : 'text-green-400'
+                      }`}>
+                        <span className="text-base">{tx.type === 'sent' ? '📤' : '📥'}</span>
+                        <span>{tx.type === 'sent' ? 'Enviado' : 'Recibido'}</span>
+                      </span>
+                      <span className={`text-sm font-bold ${
+                        tx.type === 'sent' ? 'text-red-400' : 'text-green-400'
+                      }`}>
+                        {tx.type === 'sent' ? '-' : '+'}{tx.amount} STX
+                      </span>
+                    </div>
+                    
+                    <div className="mb-1">
+                      <p className="text-jet-900 text-[10px] font-semibold mb-1">
+                        {tx.type === 'sent' ? '➜ Para:' : '← De:'}
+                      </p>
+                      <p className="text-jet-800 text-[10px] font-mono truncate">
+                        {tx.type === 'sent' ? tx.recipient : tx.sender}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-jet-600">
+                      <p className="text-jet-700 text-[9px] flex items-center gap-1">
+                        <span>📅</span>
+                        {tx.date}
+                      </p>
+                      <a
+                        href={tx.explorerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-giants-orange hover:text-sandy-brown text-[9px] font-semibold"
+                      >
+                        Ver ↗
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
         <div className="p-4">
           {/* Logo y título del sidebar */}
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-jet-600">
@@ -309,156 +433,30 @@ Puedo ayudarte con:
 
           {/* Historial de Transacciones */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-seasalt text-sm font-semibold flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
-                <span className="text-lg">📜</span> 
-                <span>Historial</span>
-              </h4>
-              {isConnected && userAddress && recentTransactions.length > 0 && (
+            <h4 className="text-seasalt text-sm font-semibold mb-3 flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
+              <span className="text-lg">📜</span> 
+              <span>Historial</span>
+            </h4>
+            <div className="space-y-2">
+              {isConnected && userAddress ? (
                 <button
                   onClick={() => setShowHistoryModal(true)}
-                  className="text-giants-orange hover:text-sandy-brown text-xs font-semibold transition-colors"
-                  title="Ver historial completo"
+                  className="w-full p-4 rounded-lg bg-gradient-to-r from-giants-orange to-sandy-brown hover:from-rust hover:to-giants-orange border border-sandy-brown transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
-                  Ver todo →
+                  <div className="flex items-center justify-center gap-2 text-seasalt font-bold">
+                    <span className="text-2xl">�</span>
+                    <span>Ver Historial Completo</span>
+                  </div>
+                  <p className="text-seasalt text-xs mt-2 opacity-90">
+                    Transacciones de tu wallet
+                  </p>
                 </button>
-              )}
-            </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-              {!isConnected || !userAddress ? (
+              ) : (
                 <div className="p-4 rounded-lg bg-jet-600 bg-opacity-30 border border-jet-600 text-center">
                   <p className="text-jet-800 text-xs">
                     🔒 Conecta tu wallet para ver el historial
                   </p>
                 </div>
-              ) : loadingHistory ? (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-giants-orange"></div>
-                  <p className="text-jet-800 text-xs mt-2">Cargando...</p>
-                </div>
-              ) : recentTransactions.length === 0 ? (
-                <div className="p-4 rounded-lg bg-licorice-300 border border-jet-600 text-center">
-                  <p className="text-4xl mb-2">📭</p>
-                  <p className="text-jet-800 text-xs">
-                    No hay transacciones aún
-                  </p>
-                </div>
-              ) : (
-                recentTransactions.map((tx, index) => {
-                  // Determinar el icono y color según el tipo de transacción
-                  // YA NO MOSTRAMOS FALLIDAS (se filtran en el servicio)
-                  const getTransactionStyle = () => {
-                    switch (tx.type) {
-                      case 'sent':
-                        return {
-                          icon: '📤',
-                          label: 'Enviado',
-                          color: 'text-red-400',
-                          sign: '-'
-                        };
-                      case 'received':
-                        return {
-                          icon: '📥',
-                          label: 'Recibido',
-                          color: 'text-green-400',
-                          sign: '+'
-                        };
-                      case 'contract':
-                        return {
-                          icon: '📝',
-                          label: tx.displayType,
-                          color: 'text-blue-400',
-                          sign: '-' // Los contratos que envían STX son negativos
-                        };
-                      case 'deploy':
-                        return {
-                          icon: '🚀',
-                          label: 'Deploy',
-                          color: 'text-purple-400',
-                          sign: ''
-                        };
-                      default:
-                        return {
-                          icon: '📋',
-                          label: tx.displayType || 'Otro',
-                          color: 'text-yellow-400',
-                          sign: ''
-                        };
-                    }
-                  };
-
-                  const style = getTransactionStyle();
-
-                  return (
-                    <div
-                      key={tx.txid + index}
-                      className="p-3 rounded-lg border transition-colors bg-licorice-300 border-jet-600 hover:border-jet-500"
-                    >
-                      {/* Header con icono y tipo */}
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={`text-xs font-semibold flex items-center gap-1 ${style.color}`}>
-                          <span className="text-base">{style.icon}</span>
-                          <span className="truncate max-w-[120px]">{style.label}</span>
-                        </span>
-                        {/* Mostrar monto solo si NO es contrato */}
-                        {tx.type !== 'contract' && (
-                          <span className={`text-sm font-bold ${style.color}`}>
-                            {style.sign && style.sign}{tx.amountSTX > 0 ? tx.amount : ''} {tx.amountSTX > 0 ? 'STX' : ''}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Monto del contrato en línea separada */}
-                      {tx.type === 'contract' && tx.amountSTX > 0 && (
-                        <div className="mb-2">
-                          <span className={`text-sm font-bold ${style.color}`}>
-                            {style.sign}{tx.amount} STX
-                          </span>
-                        </div>
-                      )}
-                      
-                      {/* Mostrar estado si es pendiente */}
-                      {tx.status === 'pending' && (
-                        <div className="mb-2 px-2 py-1 rounded text-[9px] font-semibold bg-yellow-600 bg-opacity-20 text-yellow-400">
-                          ⏳ Pendiente
-                        </div>
-                      )}
-                      
-                      <div className="mb-1">
-                        <p className="text-jet-900 text-[10px] font-semibold mb-1">
-                          {tx.type === 'sent' ? '➜ Para:' : tx.type === 'received' ? '← De:' : '📝 Contrato:'}
-                        </p>
-                        <p className="text-jet-800 text-[10px] font-mono truncate">
-                          {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
-                        </p>
-                      </div>
-                      
-                      {/* Mostrar fee solo si hay monto en el contrato */}
-                      {tx.type === 'contract' && tx.amountSTX > 0 && (
-                        <div className="mb-1">
-                          <p className="text-jet-700 text-[9px]">
-                            ⚡ Fee: {tx.fee} STX
-                          </p>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-jet-600">
-                        <p className="text-jet-700 text-[9px] flex items-center gap-1">
-                          <span>📅</span>
-                          {tx.date}
-                        </p>
-                        <a
-                          href={tx.explorerUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-giants-orange hover:text-sandy-brown text-[9px] font-semibold"
-                        >
-                          Ver ↗
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })
               )}
             </div>
           </div>
