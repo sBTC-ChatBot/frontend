@@ -445,13 +445,13 @@ Puedo ayudarte con:
                       <div className="flex items-start justify-between mb-1">
                         {/* Monto a la izquierda */}
                         {tx.amountSTX > 0 && (
-                          <span className={`text-sm font-bold ${style.color}`}>
+                          <span className={`text-base font-bold ${style.color}`}>
                             {style.sign}{tx.amount} STX
                           </span>
                         )}
                         {/* Para deploy sin monto, mostrar el tipo */}
                         {tx.amountSTX === 0 && (
-                          <span className={`text-xs font-semibold ${style.color}`}>
+                          <span className={`text-sm font-semibold ${style.color}`}>
                             {style.label}
                           </span>
                         )}
@@ -460,7 +460,7 @@ Puedo ayudarte con:
                           href={tx.explorerUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-kikk-orange hover:text-kikk-orange-light text-[9px] font-semibold whitespace-nowrap ml-2 uppercase tracking-wider"
+                          className="text-kikk-orange hover:text-kikk-orange-light text-[10px] font-semibold whitespace-nowrap ml-2 uppercase tracking-wider"
                         >
                           Ver ↗
                         </a>
@@ -469,12 +469,12 @@ Puedo ayudarte con:
                       {/* Segunda línea: Fee + Tipo (si hay monto) */}
                       <div className="flex items-center justify-between mb-2">
                         {tx.fee && parseFloat(tx.fee) > 0 && (
-                          <p className="text-jet-700 text-[8px]">
+                          <p className="text-kikk-gray text-[10px]">
                             Fee: {tx.fee} STX
                           </p>
                         )}
                         {tx.amountSTX > 0 && (
-                          <span className={`text-[9px] font-semibold ${style.color}`}>
+                          <span className={`text-[10px] font-semibold ${style.color}`}>
                             {style.label}
                           </span>
                         )}
@@ -482,7 +482,7 @@ Puedo ayudarte con:
                       
                       {/* Mostrar estado si es pendiente */}
                       {tx.status === 'pending' && (
-                        <div className="mb-2 px-2 py-1 rounded text-[9px] font-semibold bg-yellow-600 bg-opacity-20 text-yellow-400">
+                        <div className="mb-2 px-2 py-1 rounded text-[10px] font-semibold bg-yellow-600 bg-opacity-20 text-yellow-400">
                           ⏳ Pendiente
                         </div>
                       )}
@@ -490,8 +490,8 @@ Puedo ayudarte con:
                       {/* Dirección/Contrato */}
                       {tx.type !== 'deploy' && (
                         <div className="mb-1">
-                          <p className="text-jet-800 text-[8px] font-mono truncate">
-                            <span className="text-jet-900 font-semibold">
+                          <p className="text-kikk-gray text-[10px] font-mono truncate">
+                            <span className="text-kikk-white font-semibold">
                               {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : 'Contrato: '}
                             </span>
                             {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
@@ -574,7 +574,7 @@ Puedo ayudarte con:
         </div>
 
         {/* Messages Area - Estilo KIKK */}
-        <div className="flex-1 overflow-y-auto bg-kikk-black">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-kikk-black via-kikk-dark to-kikk-black">
           <div className="max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 space-y-3 sm:space-y-4 md:space-y-6">
             {messages.map(message => (
               <div 

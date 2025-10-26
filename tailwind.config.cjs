@@ -9,6 +9,7 @@ module.exports = {
       colors: {
         // Paleta KIKK style
         'kikk-black': '#000000',
+        'kikk-dark': '#111111', // Gris muy oscuro para fondos
         'kikk-white': '#FFFFFF',
         'kikk-orange': '#FF9900',
         'kikk-orange-light': '#FFA500',

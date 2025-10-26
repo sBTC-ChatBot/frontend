@@ -10,7 +10,7 @@ body {
   padding: 0;
   min-height: 100vh;
   font-family: 'Courier New', Monaco, Consolas, monospace;
-  background: #000000;
+  background: linear-gradient(to bottom, #000000, #111111, #000000);
   color: #FFFFFF;
 }
 
