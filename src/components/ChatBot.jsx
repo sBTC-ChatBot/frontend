@@ -264,6 +264,53 @@ Puedo ayudarte con:
     textareaRef.current?.focus();
   };
 
+  // Función para consultar el balance usando Hiro API
+  const handleBalanceCheck = async () => {
+    if (!isConnected || !userAddress) {
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: '🔒 Por favor conecta tu wallet primero para consultar el balance.',
+        sender: 'bot'
+      }]);
+      return;
+    }
+
+    // Mostrar mensaje de carga
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      text: '💰 Consultando tu balance...',
+      sender: 'bot'
+    }]);
+
+    try {
+      // Consultar balance desde Hiro API
+      const HIRO_API = "https://api.testnet.hiro.so"; // Cambiar a mainnet si es necesario
+      const response = await fetch(`${HIRO_API}/extended/v1/address/${userAddress}/balances`);
+      
+      if (!response.ok) {
+        throw new Error('Error al consultar el balance');
+      }
+
+      const data = await response.json();
+      const balanceInMicroSTX = data.stx.balance;
+      const balanceInSTX = (balanceInMicroSTX / 1_000_000).toFixed(6);
+
+      // Mostrar el balance en el chat
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: `💰 **Tu saldo es ${balanceInSTX} STX**\n\n📊 Detalles:\n• Balance disponible: ${balanceInSTX} STX\n• Dirección: ${userAddress.substring(0, 10)}...${userAddress.substring(userAddress.length - 6)}`,
+        sender: 'bot'
+      }]);
+    } catch (error) {
+      console.error('Error al consultar balance:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: '❌ Error al consultar el balance. Por favor intenta nuevamente.',
+        sender: 'bot'
+      }]);
+    }
+  };
+
   const handleContactSelect = (contact) => {
     setInput(`Enviar a ${contact.name} (${contact.address})`);
     setShowContactsMenu(false);
@@ -653,7 +700,7 @@ Puedo ayudarte con:
           {/* Atajos rápidos */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
             <button
-              onClick={() => handleShortcut('¿Cuál es mi balance?')}
+              onClick={handleBalanceCheck}
               className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
             >
               💰 Balance
