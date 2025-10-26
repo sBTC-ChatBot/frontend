@@ -12,14 +12,13 @@ const ChatBot = () => {
   const [messages, setMessages] = useState([
     {
       id: 0,
-      text: `¡Hola! 👋 Soy tu asistente de Stacks.
+      text: `¡Hola amigo! 👋 Soy tu asistente de Stacks.
 
 Puedo ayudarte con:
 
-💰 **Consultar tu balance** de STX
-📤 **Realizar transferencias** seguras
-📜 **Ver historial** de transacciones
-🔍 **Explorar contratos** Clarity
+ **Consultar tu balance** de STX
+ **Realizar transferencias** seguras
+ **Ver inversiones** 
 
 ¿En qué puedo ayudarte hoy?`,
       sender: 'bot'
