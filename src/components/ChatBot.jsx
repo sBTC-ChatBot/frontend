@@ -4,7 +4,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStacksContract } from '../hooks/useStacksContract';
 import { getSTXTransfers } from '../services/chatService';
+import { 
+  getContactsByWalletAddress, 
+  createContactByWalletAddress,
+  updateContact,
+  deleteContact,
+  getOrCreateUser 
+} from '../services/supabaseService';
 import TransactionHistory from './TransactionHistory';
+import ContactModal from './ContactModal';
 import logoStack from '../assets/logo_stack.png';
 import logoChatBot from '../assets/logoChatBot.png';
 
@@ -13,7 +21,7 @@ const ChatBot = () => {
   const [messages, setMessages] = useState([
     {
       id: 0,
-      text: `¡Hola amigo! 👋 Soy tu asistente de Stacks.
+      text: `¡Hola amigo! 👋🐼 Soy tu asistente de Stacks.
 
 Puedo ayudarte con:
 
@@ -30,6 +38,14 @@ Puedo ayudarte con:
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  
+  // Estados para contactos
+  const [contacts, setContacts] = useState([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [contactModalMode, setContactModalMode] = useState('create');
+  
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -194,12 +210,36 @@ Puedo ayudarte con:
     cancelTransfer
   } = useStacksContract();
 
-  // Mock data para contactos
-  const contacts = [
-    { id: 1, name: 'Alice', address: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM' },
-    { id: 2, name: 'Bob', address: 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG' },
-    { id: 3, name: 'Charlie', address: 'ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC' }
-  ];
+  // Cargar contactos cuando el usuario se conecta
+  useEffect(() => {
+    const loadContacts = async () => {
+      if (isConnected && userAddress) {
+        setLoadingContacts(true);
+        try {
+          // Asegurarse de que el usuario existe en Supabase
+          await getOrCreateUser(userAddress);
+          
+          // Cargar contactos
+          const { data, error } = await getContactsByWalletAddress(userAddress);
+          if (error) {
+            console.error('Error cargando contactos:', error);
+            setContacts([]);
+          } else {
+            setContacts(data || []);
+          }
+        } catch (error) {
+          console.error('Error en loadContacts:', error);
+          setContacts([]);
+        } finally {
+          setLoadingContacts(false);
+        }
+      } else {
+        setContacts([]);
+      }
+    };
+
+    loadContacts();
+  }, [isConnected, userAddress]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -311,10 +351,119 @@ Puedo ayudarte con:
     }
   };
 
+  // Funciones para manejar contactos
   const handleContactSelect = (contact) => {
-    setInput(`Enviar a ${contact.name} (${contact.address})`);
+    setInput(`Enviar a ${contact.nombre} (${contact.wallet_address})`);
     setShowContactsMenu(false);
     textareaRef.current?.focus();
+  };
+
+  const handleAddContact = () => {
+    setContactModalMode('create');
+    setSelectedContact(null);
+    setShowContactModal(true);
+  };
+
+  const handleEditContact = (contact) => {
+    setContactModalMode('edit');
+    setSelectedContact(contact);
+    setShowContactModal(true);
+  };
+
+  const handleDeleteContact = async (contactId) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este contacto?')) {
+      return;
+    }
+
+    try {
+      const { error } = await deleteContact(contactId);
+      if (error) {
+        console.error('Error al eliminar contacto:', error);
+        alert('Error al eliminar el contacto');
+        return;
+      }
+
+      // Actualizar lista de contactos
+      setContacts(prev => prev.filter(c => c.id !== contactId));
+      
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: '✅ Contacto eliminado exitosamente',
+        sender: 'bot'
+      }]);
+    } catch (error) {
+      console.error('Error en handleDeleteContact:', error);
+      alert('Error al eliminar el contacto');
+    }
+  };
+
+  const handleSaveContact = async (contactData) => {
+    try {
+      if (contactModalMode === 'create') {
+        // Validar que el usuario esté conectado
+        if (!userAddress) {
+          alert('Por favor conecta tu wallet primero');
+          return;
+        }
+
+        console.log('Creando contacto:', {
+          userAddress,
+          nombre: contactData.nombre,
+          wallet_address: contactData.wallet_address
+        });
+
+        // Crear nuevo contacto
+        const { data, error } = await createContactByWalletAddress(
+          userAddress,
+          contactData.nombre,
+          contactData.wallet_address
+        );
+
+        if (error) {
+          console.error('Error detallado al crear contacto:', error);
+          if (error.message === 'Este contacto ya existe') {
+            alert('Este contacto ya existe en tu lista');
+          } else {
+            alert(`Error al crear el contacto: ${error.message || 'Error desconocido'}`);
+          }
+          return;
+        }
+
+        console.log('Contacto creado exitosamente:', data);
+
+        // Actualizar lista de contactos
+        setContacts(prev => [...prev, data]);
+        
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: `✅ Contacto **${contactData.nombre}** agregado exitosamente`,
+          sender: 'bot'
+        }]);
+      } else {
+        // Actualizar contacto existente
+        const { data, error } = await updateContact(selectedContact.id, {
+          nombre: contactData.nombre
+        });
+
+        if (error) {
+          console.error('Error al actualizar contacto:', error);
+          alert(`Error al actualizar el contacto: ${error.message || 'Error desconocido'}`);
+          return;
+        }
+
+        // Actualizar lista de contactos
+        setContacts(prev => prev.map(c => c.id === selectedContact.id ? data : c));
+        
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: `✅ Contacto **${contactData.nombre}** actualizado exitosamente`,
+          sender: 'bot'
+        }]);
+      }
+    } catch (error) {
+      console.error('Error en handleSaveContact:', error);
+      alert(`Error al guardar el contacto: ${error.message || 'Error desconocido'}`);
+    }
   };
 
   return (
@@ -333,24 +482,94 @@ Puedo ayudarte con:
 
           {/* Contactos */}
           <div className="mb-6">
-            <h4 className="text-seasalt text-sm font-semibold mb-3 flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
-              <span className="text-lg">👥</span> 
-              <span>Contactos</span>
-            </h4>
-            <div className="space-y-2">
-              {contacts.map(contact => (
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-seasalt text-sm font-semibold flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
+                <span className="text-lg">👥</span> 
+                <span>Contactos</span>
+              </h4>
+              {isConnected && (
                 <button
-                  key={contact.id}
-                  onClick={() => handleContactSelect(contact)}
-                  className="w-full text-left p-3 rounded-lg bg-licorice-300 hover:bg-jet-400 transition-all duration-200 border border-jet-600 hover:border-giants-orange hover:shadow-lg hover:shadow-giants-orange/20 group"
+                  onClick={handleAddContact}
+                  className="text-giants-orange hover:text-sandy-brown transition-colors p-1 rounded-lg hover:bg-jet-400"
+                  title="Agregar contacto"
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm group-hover:scale-110 transition-transform">👤</span>
-                    <p className="text-seasalt font-medium text-sm">{contact.name}</p>
-                  </div>
-                  <p className="text-jet-800 text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                 </button>
-              ))}
+              )}
+            </div>
+            <div className="space-y-2">
+              {!isConnected ? (
+                <div className="p-4 rounded-lg bg-jet-600 bg-opacity-30 border border-jet-600 text-center">
+                  <p className="text-jet-800 text-xs">
+                    🔒 Conecta tu wallet para ver contactos
+                  </p>
+                </div>
+              ) : loadingContacts ? (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-giants-orange"></div>
+                  <p className="text-jet-800 text-xs mt-2">Cargando contactos...</p>
+                </div>
+              ) : contacts.length === 0 ? (
+                <div className="p-4 rounded-lg bg-licorice-300 border border-jet-600 text-center">
+                  <p className="text-2xl mb-2">👥</p>
+                  <p className="text-jet-800 text-xs mb-2">
+                    No hay contactos aún
+                  </p>
+                  <button
+                    onClick={handleAddContact}
+                    className="text-giants-orange hover:text-sandy-brown text-xs font-semibold transition-colors"
+                  >
+                    ➕ Agregar contacto
+                  </button>
+                </div>
+              ) : (
+                contacts.map(contact => (
+                  <div
+                    key={contact.id}
+                    className="group relative"
+                  >
+                    <button
+                      onClick={() => handleContactSelect(contact)}
+                      className="w-full text-left p-3 rounded-lg bg-licorice-300 hover:bg-jet-400 transition-all duration-200 border border-jet-600 hover:border-giants-orange hover:shadow-lg hover:shadow-giants-orange/20"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm group-hover:scale-110 transition-transform">👤</span>
+                        <p className="text-seasalt font-medium text-sm">{contact.nombre}</p>
+                      </div>
+                      <p className="text-jet-800 text-xs font-mono truncate ml-6">{contact.wallet_address.substring(0, 18)}...</p>
+                    </button>
+                    {/* Botones de acción (aparecen al hacer hover) */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditContact(contact);
+                        }}
+                        className="p-1 bg-jet hover:bg-giants-orange rounded-md transition-colors"
+                        title="Editar contacto"
+                      >
+                        <svg className="w-4 h-4 text-seasalt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteContact(contact.id);
+                        }}
+                        className="p-1 bg-jet hover:bg-red-600 rounded-md transition-colors"
+                        title="Eliminar contacto"
+                      >
+                        <svg className="w-4 h-4 text-seasalt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -567,7 +786,7 @@ Puedo ayudarte con:
               onClick={connectWallet}
               className="bg-giants-orange hover:bg-rust text-seasalt font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-all duration-200 shadow-lg hover:shadow-giants-orange/50 hover:scale-105 flex items-center gap-2"
             >
-              <span className="hidden sm:inline">🔗</span>
+              <span className="hidden sm:inline"></span>
               <span>Conectar Wallet</span>
             </button>
           )}
@@ -703,14 +922,14 @@ Puedo ayudarte con:
               onClick={handleBalanceCheck}
               className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
             >
-              💰 Balance
+              Balance
             </button>
             
             <button
               onClick={() => handleShortcut('¿Cómo puedo hacer una transferencia?')}
               className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
             >
-              💸 Quiero enviar STX
+              Quiero enviar STX
             </button>
           </div>
 
@@ -732,20 +951,59 @@ Puedo ayudarte con:
 
               {/* Menú de contactos desplegable */}
               {showContactsMenu && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-jet rounded-lg shadow-xl border border-jet-600 max-h-60 overflow-y-auto">
-                  <div className="p-2">
-                    <p className="text-jet-900 text-xs font-semibold mb-2 px-2">Seleccionar contacto</p>
-                    {contacts.map(contact => (
-                      <button
-                        key={contact.id}
-                        type="button"
-                        onClick={() => handleContactSelect(contact)}
-                        className="w-full text-left p-2 rounded hover:bg-licorice transition-colors"
-                      >
-                        <p className="text-seasalt text-sm font-medium">{contact.name}</p>
-                        <p className="text-jet-800 text-xs font-mono truncate">{contact.address}</p>
-                      </button>
-                    ))}
+                <div className="absolute bottom-full left-0 mb-2 w-72 bg-jet rounded-lg shadow-xl border border-jet-600 max-h-80 overflow-hidden flex flex-col">
+                  <div className="p-3 border-b border-jet-600 flex items-center justify-between">
+                    <p className="text-seasalt text-sm font-semibold">Contactos</p>
+                    <button
+                      type="button"
+                      onClick={handleAddContact}
+                      className="text-giants-orange hover:text-sandy-brown transition-colors"
+                      title="Agregar contacto"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto p-2">
+                    {loadingContacts ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-giants-orange"></div>
+                      </div>
+                    ) : contacts.length === 0 ? (
+                      <div className="text-center py-6">
+                        <p className="text-jet-800 text-sm mb-2">No hay contactos</p>
+                        <button
+                          type="button"
+                          onClick={handleAddContact}
+                          className="text-giants-orange hover:text-sandy-brown text-xs font-semibold"
+                        >
+                          ➕ Agregar contacto
+                        </button>
+                      </div>
+                    ) : (
+                      contacts.map(contact => (
+                        <button
+                          key={contact.id}
+                          type="button"
+                          onClick={() => handleContactSelect(contact)}
+                          className="w-full text-left p-2 rounded hover:bg-licorice transition-colors group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-seasalt text-sm font-medium flex items-center gap-2">
+                                <span>👤</span>
+                                <span>{contact.nombre}</span>
+                              </p>
+                              <p className="text-jet-800 text-xs font-mono truncate">{contact.wallet_address}</p>
+                            </div>
+                            <svg className="w-4 h-4 text-giants-orange opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -803,6 +1061,15 @@ Puedo ayudarte con:
         address={userAddress}
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
+      />
+
+      {/* Modal de Contactos */}
+      <ContactModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        onSave={handleSaveContact}
+        contact={selectedContact}
+        mode={contactModalMode}
       />
     </div>
   );

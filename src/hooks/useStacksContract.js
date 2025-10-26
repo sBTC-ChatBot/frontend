@@ -2,7 +2,7 @@
  * Custom Hook para la conexión de wallet, chatbot y contrato inteligente
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { connect, showContractCall } from '@stacks/connect';
 import { 
   PostConditionMode,
@@ -67,7 +67,7 @@ export const useStacksContract = () => {
           setUserAddress(stxAddress.address);
           setIsConnected(true);
           fetchUserBalance(stxAddress.address);
-          setChatResponse('✅ Wallet conectada exitosamente! Ahora puedes interactuar con el chatbot.');
+          setChatResponse('Wallet conectada exitosamente! Ahora puedes interactuar con el chatbot.');
         }
       }
     } catch (error) {
@@ -154,7 +154,8 @@ export const useStacksContract = () => {
     setChatResponse(null);
     
     try {
-      const response = await sendChatMessage(message);
+      // Enviar mensaje con la wallet del usuario para resolver contactos
+      const response = await sendChatMessage(message, userAddress);
       
       switch (response.action) {
         case 'read':
@@ -165,12 +166,18 @@ export const useStacksContract = () => {
           break;
         case 'transfer':
           if (response.recipient && response.amount) {
+            // Si hay un nombre de contacto, mostrarlo en el mensaje
+            const contactInfo = response.contact_name 
+              ? `${response.contact_name} (${response.recipient})` 
+              : response.recipient;
+            
             setPendingTransfer({
               recipient: response.recipient,
               amount: response.amount,
-              message: `¿Deseas transferir ${response.amount} STX a ${response.recipient}?`
+              contactName: response.contact_name || null,
+              message: `¿Deseas transferir ${response.amount} STX a ${contactInfo}?`
             });
-            setChatResponse(`✋ Confirma la transferencia de ${response.amount} STX a ${response.recipient}`);
+            setChatResponse(`✋ Confirma la transferencia de ${response.amount} STX a ${contactInfo}`);
           } else {
             setChatResponse('⚠️ No pude identificar el destinatario o la cantidad. Por favor, especifica la dirección y el monto.');
           }
@@ -180,7 +187,7 @@ export const useStacksContract = () => {
             try {
               const balanceData = await getWalletBalance(response.address);
               setChatResponse(balanceData.message);
-            } catch (error) {
+            } catch {
               setChatResponse('Error al consultar el balance');
             }
           } else {
@@ -243,7 +250,7 @@ export const useStacksContract = () => {
               `📋 ID de transacción: ${data.txId}\n\n` +
               `🔗 Ver en explorer: ${txStatus.explorer_url}`
             );
-          } catch (error) {
+          } catch {
             setChatResponse(
               `✅ Transferencia enviada exitosamente!\n\n` +
               `📋 ID de transacción: ${data.txId}\n\n` +

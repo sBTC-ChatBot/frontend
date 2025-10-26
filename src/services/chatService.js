@@ -3,20 +3,28 @@
  */
 
 // URL base del backend
-const API_BASE_URL = "https://clarity-backend-duun.onrender.com";
+const API_BASE_URL = "http://127.0.0.1:5000";
 
 /**
  * Envía un mensaje al chatbot y recibe una acción recomendada
  * @param {string} message - El mensaje del usuario para el chatbot
+ * @param {string} userWallet - Dirección de wallet del usuario (opcional)
  */
-export const sendChatMessage = async (message) => {
+export const sendChatMessage = async (message, userWallet = null) => {
   try {
+    const requestBody = { message };
+    
+    // Agregar wallet del usuario si está disponible (para resolver contactos)
+    if (userWallet) {
+      requestBody.user_wallet = userWallet;
+    }
+    
     const response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -30,6 +38,66 @@ export const sendChatMessage = async (message) => {
       action: 'none',
       message: 'Lo siento, ha ocurrido un error al procesar tu mensaje.'
     };
+  }
+};
+
+/**
+ * Resuelve un nombre de contacto a una dirección de wallet
+ * @param {string} userWallet - Dirección de wallet del usuario
+ * @param {string} contactName - Nombre del contacto a resolver
+ * @returns {Promise<Object>} Información del contacto resuelto
+ */
+export const resolveContact = async (userWallet, contactName) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/contacts/resolve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_wallet: userWallet,
+        contact_name: contactName
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al resolver contacto');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error al resolver contacto:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la lista de contactos de un usuario desde el backend
+ * @param {string} userWallet - Dirección de wallet del usuario
+ * @returns {Promise<Array>} Lista de contactos
+ */
+export const getContactsFromBackend = async (userWallet) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/contacts/list`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_wallet: userWallet
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener contactos');
+    }
+
+    const data = await response.json();
+    return data.contacts || [];
+  } catch (error) {
+    console.error('Error al obtener contactos:', error);
+    return [];
   }
 };
 

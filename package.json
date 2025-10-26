@@ -13,6 +13,7 @@
     "@stacks/connect": "^8.2.1",
     "@stacks/network": "^7.2.0",
     "@stacks/transactions": "^7.2.0",
+    "@supabase/supabase-js": "^2.76.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
