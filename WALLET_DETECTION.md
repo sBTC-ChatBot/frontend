@@ -1,4 +1,4 @@
-# 🔐 Detección Automática de Wallets - Clarity Chat
+# 🔐 Detección Automática de Wallets - sBTC ChatBot
 
 ## Implementación Actualizada
 
@@ -56,7 +56,7 @@ showConnect() detecta wallets disponibles
 ```javascript
 showConnect({
   appDetails: {
-    name: 'Clarity Chat',
+    name: 'sBTC ChatBot',
     icon: window.location.origin + '/vite.svg',
   },
   // ... detecta wallets automáticamente

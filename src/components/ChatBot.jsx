@@ -6,6 +6,7 @@ import { useStacksContract } from '../hooks/useStacksContract';
 import { getSTXTransfers } from '../services/chatService';
 import TransactionHistory from './TransactionHistory';
 import logoStack from '../assets/logo_stack.png';
+import logoChatBot from '../assets/logoChatBot.png';
 
 const ChatBot = () => {
   const [input, setInput] = useState('');
@@ -325,8 +326,8 @@ Puedo ayudarte con:
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-jet-600">
             <img src={logoStack} alt="Logo" className="w-10 h-10 rounded-full border-2 border-giants-orange shadow-lg shadow-giants-orange/30" />
             <div>
-              <h3 className="text-seasalt font-bold text-lg">Clarity Chat</h3>
-              <p className="text-jet-800 text-xs">Asistente Blockchain</p>
+              <h3 className="text-seasalt font-bold text-lg">sBTC ChatBot</h3>
+              <p className="text-jet-800 text-xs">Agente Blockchain en STX</p>
             </div>
           </div>
 
@@ -533,12 +534,12 @@ Puedo ayudarte con:
             <img src={logoStack} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-giants-orange shadow-md hover:shadow-giants-orange/50 transition-shadow" />
             <div>
               <h2 className="text-seasalt font-bold text-sm sm:text-base flex items-center gap-2">
-                <span>Clarity Chat</span>
+                <span>sBTC ChatBot</span>
                 {isConnected && <span className="text-green-400 text-xs">●</span>}
               </h2>
               {isConnected && (
                 <p className="text-jet-900 text-xs font-mono flex items-center gap-1">
-                  <span className="text-[10px]">📬</span>
+                  <span className="text-[10px]"></span>
                   {userAddress ? `${userAddress.substring(0, 8)}...` : ''}
                 </p>
               )}
@@ -581,12 +582,12 @@ Puedo ayudarte con:
                 className={`flex gap-2 sm:gap-3 md:gap-4 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 {/* Avatar */}
-                <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base shadow-lg ${
+                <div className={`flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base shadow-lg ${
                   message.sender === 'user' 
                     ? 'bg-giants-orange text-seasalt' 
-                    : 'bg-rust text-seasalt'
+                    : 'bg-transparent'
                 }`}>
-                  {message.sender === 'user' ? '👤' : '🤖'}
+                  {message.sender === 'user' ? '👤' : <img src={logoChatBot} alt="Bot" className="w-full h-full rounded-full object-cover" />}
                 </div>
                 
                 {/* Message Content */}
@@ -618,8 +619,8 @@ Puedo ayudarte con:
             
             {isChatLoading && (
               <div className="flex gap-2 sm:gap-3 md:gap-4">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-rust flex items-center justify-center text-xs sm:text-sm md:text-base text-seasalt shadow-lg">
-                  🤖
+                <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-transparent flex items-center justify-center shadow-lg overflow-hidden">
+                  <img src={logoChatBot} alt="Bot" className="w-full h-full rounded-full object-cover" />
                 </div>
                 <div className="bg-jet px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 rounded-xl sm:rounded-2xl border border-jet-600 shadow-md">
                   <div className="flex gap-1 sm:gap-1.5">
