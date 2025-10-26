@@ -450,22 +450,22 @@ Puedo ayudarte con:
   };
 
   return (
-    <div className="flex h-screen bg-kikk-black overflow-hidden font-mono">
+    <div className="flex h-screen bg-licorice overflow-hidden font-mono">
       {/* Sidebar - Panel lateral */}
-      <div className={`sidebar-scroll ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-kikk-gray-dark border-r border-kikk-gray transition-transform duration-300 overflow-y-auto`}>
+      <div className={`sidebar-scroll ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-30 w-64 lg:w-72 h-full bg-jet border-r border-jet-700 transition-transform duration-300 overflow-y-auto`}>
         <div className="p-4">
           {/* Logo y título del sidebar */}
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-kikk-gray">
-            <img src={logoStack} alt="Logo" className="w-10 h-10 rounded-full border-2 border-kikk-orange shadow-lg shadow-kikk-orange/30" />
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-jet-600">
+            <img src={logoStack} alt="Logo" className="w-10 h-10 rounded-full border-2 border-giants-orange shadow-lg shadow-giants-orange/30" />
             <div>
-              <h3 className="text-kikk-white font-bold text-lg tracking-wider">sBTC ChatBot</h3>
-              <p className="text-kikk-gray text-xs">Agente Blockchain en STX</p>
+              <h3 className="text-seasalt font-bold text-lg">sBTC ChatBot</h3>
+              <p className="text-jet-800 text-xs">Agente Blockchain en STX</p>
             </div>
           </div>
 
           {/* Contactos */}
           <div className="mb-6">
-            <h4 className="text-kikk-white text-sm font-semibold mb-3 flex items-center gap-2 bg-kikk-orange px-3 py-2 rounded-sm uppercase tracking-widest">
+            <h4 className="text-seasalt text-sm font-semibold mb-3 flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
               <span className="text-lg">👥</span> 
               <span>Contactos</span>
             </h4>
@@ -474,13 +474,13 @@ Puedo ayudarte con:
                 <button
                   key={contact.id}
                   onClick={() => handleContactSelect(contact)}
-                  className="w-full text-left p-3 rounded-sm bg-kikk-black hover:bg-kikk-gray-dark transition-all duration-200 border border-kikk-gray hover:border-kikk-orange group"
+                  className="w-full text-left p-3 rounded-lg bg-licorice-300 hover:bg-jet-400 transition-all duration-200 border border-jet-600 hover:border-giants-orange hover:shadow-lg hover:shadow-giants-orange/20 group"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm group-hover:scale-110 transition-transform">👤</span>
-                    <p className="text-kikk-white font-medium text-sm">{contact.name}</p>
+                    <p className="text-seasalt font-medium text-sm">{contact.name}</p>
                   </div>
-                  <p className="text-kikk-gray text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
+                  <p className="text-jet-800 text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
                 </button>
               ))}
             </div>
@@ -489,14 +489,14 @@ Puedo ayudarte con:
           {/* Historial de Transacciones */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-kikk-white text-sm font-semibold flex items-center gap-2 bg-kikk-orange px-3 py-2 rounded-sm uppercase tracking-widest">
+              <h4 className="text-seasalt text-sm font-semibold flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
                 <span className="text-lg">📜</span> 
                 <span>Historial</span>
               </h4>
               {isConnected && userAddress && recentTransactions.length > 0 && (
                 <button
                   onClick={() => setShowHistoryModal(true)}
-                  className="text-kikk-orange hover:text-kikk-orange-light text-xs font-semibold transition-colors uppercase tracking-wider"
+                  className="text-giants-orange hover:text-sandy-brown text-xs font-semibold transition-colors"
                   title="Ver historial completo"
                 >
                   Ver todo →
@@ -505,8 +505,8 @@ Puedo ayudarte con:
             </div>
             <div className="space-y-2">
               {!isConnected || !userAddress ? (
-                <div className="p-4 rounded-sm bg-kikk-black border border-kikk-gray text-center">
-                  <p className="text-kikk-gray text-xs uppercase tracking-wider">
+                <div className="p-4 rounded-lg bg-jet-600 bg-opacity-30 border border-jet-600 text-center">
+                  <p className="text-jet-800 text-xs">
                     🔒 Conecta tu wallet para ver el historial
                   </p>
                 </div>
@@ -571,7 +571,7 @@ Puedo ayudarte con:
                   return (
                     <div
                       key={tx.txid + index}
-                      className="p-3 rounded-sm border transition-colors bg-kikk-black border-kikk-gray hover:border-kikk-orange"
+                      className="p-3 rounded-lg border transition-colors bg-licorice-300 border-jet-600 hover:border-jet-500"
                     >
                       {/* Primera línea: Monto + Tipo/Ver */}
                       <div className="flex items-start justify-between mb-1">
@@ -592,7 +592,7 @@ Puedo ayudarte con:
                           href={tx.explorerUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-kikk-orange hover:text-kikk-orange-light text-[10px] font-semibold whitespace-nowrap ml-2 uppercase tracking-wider"
+                          className="text-giants-orange hover:text-sandy-brown text-[10px] font-semibold whitespace-nowrap ml-2"
                         >
                           Ver ↗
                         </a>
@@ -601,7 +601,7 @@ Puedo ayudarte con:
                       {/* Segunda línea: Fee + Tipo (si hay monto) */}
                       <div className="flex items-center justify-between mb-2">
                         {tx.fee && parseFloat(tx.fee) > 0 && (
-                          <p className="text-kikk-gray text-[10px]">
+                          <p className="text-jet-700 text-[10px]">
                             Fee: {tx.fee} STX
                           </p>
                         )}
@@ -622,8 +622,8 @@ Puedo ayudarte con:
                       {/* Dirección/Contrato */}
                       {tx.type !== 'deploy' && (
                         <div className="mb-1">
-                          <p className="text-kikk-gray text-[10px] font-mono truncate">
-                            <span className="text-kikk-white font-semibold">
+                          <p className="text-jet-800 text-[10px] font-mono truncate">
+                            <span className="text-jet-900 font-semibold">
                               {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : 'Contrato: '}
                             </span>
                             {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
@@ -650,27 +650,27 @@ Puedo ayudarte con:
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-screen">
         {/* Header */}
-        <div className="bg-kikk-gray-dark border-b border-kikk-gray p-3 sm:p-4 flex items-center justify-between">
+        <div className="bg-jet border-b border-jet-700 p-3 sm:p-4 flex items-center justify-between shadow-lg shadow-licorice/50">
           <div className="flex items-center gap-3">
             {/* Botón hamburguesa para móvil */}
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 rounded-sm hover:bg-kikk-black transition-all duration-200 border border-transparent hover:border-kikk-orange"
+              className="lg:hidden p-2 rounded-lg hover:bg-licorice transition-all duration-200 hover:scale-105 border border-transparent hover:border-giants-orange"
               aria-label="Toggle sidebar"
             >
-              <svg className="w-6 h-6 text-kikk-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-giants-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             
-            <img src={logoStack} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-kikk-orange shadow-md" />
+            <img src={logoStack} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-giants-orange shadow-md hover:shadow-giants-orange/50 transition-shadow" />
             <div>
-              <h2 className="text-kikk-white font-bold text-sm sm:text-base flex items-center gap-2 uppercase tracking-wider">
+              <h2 className="text-seasalt font-bold text-sm sm:text-base flex items-center gap-2">
                 <span>sBTC ChatBot</span>
-                {isConnected && <span className="text-kikk-orange text-xs">●</span>}
+                {isConnected && <span className="text-green-400 text-xs">●</span>}
               </h2>
               {isConnected && (
-                <p className="text-kikk-gray text-xs font-mono flex items-center gap-1">
+                <p className="text-jet-900 text-xs font-mono flex items-center gap-1">
                   <span className="text-[10px]">📬</span>
                   {userAddress ? `${userAddress.substring(0, 8)}...` : ''}
                 </p>
@@ -681,14 +681,14 @@ Puedo ayudarte con:
           {/* Wallet Info */}
           {isConnected ? (
             <div className="flex items-center gap-2">
-              <div className="hidden sm:block text-right bg-kikk-black px-3 py-2 rounded-sm border border-kikk-gray">
-                <p className="text-kikk-orange font-bold text-sm flex items-center justify-end gap-1 uppercase tracking-wider">
+              <div className="hidden sm:block text-right bg-licorice bg-opacity-50 px-3 py-2 rounded-lg border border-jet-700">
+                <p className="text-sandy-brown font-bold text-sm flex items-center justify-end gap-1">
                   <span className="text-xs">💰</span>
                   {userBalance} STX
                 </p>
                 <button 
                   onClick={disconnectWallet}
-                  className="text-kikk-gray hover:text-kikk-white text-xs transition-colors uppercase tracking-wider"
+                  className="text-jet-900 hover:text-seasalt text-xs transition-colors hover:underline"
                 >
                   Desconectar ⚡
                 </button>
@@ -697,7 +697,7 @@ Puedo ayudarte con:
           ) : (
             <button 
               onClick={connectWallet}
-              className="bg-kikk-orange hover:bg-kikk-orange-light text-kikk-black font-bold px-4 py-2 rounded-sm text-xs sm:text-sm transition-all duration-200 uppercase tracking-wider flex items-center gap-2"
+              className="bg-giants-orange hover:bg-rust text-seasalt font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-all duration-200 shadow-lg hover:shadow-giants-orange/50 hover:scale-105 flex items-center gap-2"
             >
               <span className="hidden sm:inline">🔗</span>
               <span>Conectar Wallet</span>
@@ -705,8 +705,8 @@ Puedo ayudarte con:
           )}
         </div>
 
-        {/* Messages Area - Estilo KIKK */}
-        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-kikk-black via-kikk-dark to-kikk-black">
+        {/* Messages Area - Estilo ChatGPT */}
+        <div className="flex-1 overflow-y-auto bg-licorice">
           <div className="max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 space-y-3 sm:space-y-4 md:space-y-6">
             {messages.map(message => (
               <div 
@@ -714,20 +714,20 @@ Puedo ayudarte con:
                 className={`flex gap-2 sm:gap-3 md:gap-4 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 {/* Avatar */}
-                <div className={`flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-sm flex items-center justify-center text-xs sm:text-sm md:text-base ${
+                <div className={`flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base shadow-lg ${
                   message.sender === 'user' 
-                    ? 'bg-kikk-orange text-kikk-black border-2 border-kikk-orange' 
+                    ? 'bg-giants-orange text-seasalt' 
                     : 'bg-transparent'
                 }`}>
-                  {message.sender === 'user' ? '👤' : <img src={logoChatBot} alt="Bot" className="w-full h-full rounded-sm object-cover" />}
+                  {message.sender === 'user' ? '👤' : <img src={logoChatBot} alt="Bot" className="w-full h-full rounded-full object-cover" />}
                 </div>
                 
                 {/* Message Content */}
                 <div className={`flex-1 max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className={`inline-block px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 rounded-sm ${
+                  <div className={`inline-block px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 rounded-xl sm:rounded-2xl shadow-md ${
                     message.sender === 'user'
-                      ? 'bg-kikk-gray-dark text-kikk-white font-medium border border-kikk-gray'
-                      : 'bg-transparent text-kikk-white'
+                      ? 'bg-giants-orange text-seasalt font-medium'
+                      : 'bg-jet text-seasalt border border-jet-600'
                   }`}>
                     {message.sender === 'bot' ? (
                       // Renderizar mensaje del bot con formato especial
@@ -742,7 +742,7 @@ Puedo ayudarte con:
                     )}
                   </div>
                   {/* Timestamp opcional */}
-                  <p className={`text-[10px] sm:text-xs text-kikk-gray mt-1 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                  <p className={`text-[10px] sm:text-xs text-jet-700 mt-1 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
                     {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -827,22 +827,22 @@ Puedo ayudarte con:
           </div>
         </div>
 
-        {/* Input Area - Estilo KIKK */}
-        <div className="bg-kikk-gray-dark border-t border-kikk-gray p-3 sm:p-4">
+        {/* Input Area - Estilo WhatsApp */}
+        <div className="bg-jet border-t border-jet-700 p-3 sm:p-4">
           {/* Atajos rápidos */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
             <button
               onClick={handleBalanceCheck}
-              className="px-4 py-2 bg-kikk-black hover:bg-kikk-gray-dark text-kikk-white rounded-sm text-xs sm:text-sm whitespace-nowrap border border-kikk-gray hover:border-kikk-orange transition-colors uppercase tracking-wider"
+              className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
             >
               💰 Balance
             </button>
             
             <button
               onClick={() => handleShortcut('¿Cómo puedo hacer una transferencia?')}
-              className="px-4 py-2 bg-kikk-black hover:bg-kikk-gray-dark text-kikk-white rounded-sm text-xs sm:text-sm whitespace-nowrap border border-kikk-gray hover:border-kikk-orange transition-colors uppercase tracking-wider"
+              className="px-4 py-2 bg-licorice hover:bg-jet-400 text-seasalt rounded-full text-xs sm:text-sm whitespace-nowrap border border-jet-600 hover:border-giants-orange transition-colors"
             >
-              💸 Enviar STX
+              💸 Quiero enviar STX
             </button>
           </div>
 
@@ -854,28 +854,28 @@ Puedo ayudarte con:
                 type="button"
                 onClick={() => setShowContactsMenu(!showContactsMenu)}
                 disabled={!isConnected}
-                className="p-3 bg-kikk-black hover:bg-kikk-gray-dark disabled:bg-kikk-gray rounded-sm transition-colors border border-kikk-gray"
+                className="p-3 bg-licorice hover:bg-jet-400 disabled:bg-jet-200 rounded-full transition-colors border border-jet-600"
                 title="Contactos"
               >
-                <svg className="w-5 h-5 text-kikk-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-seasalt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </button>
 
               {/* Menú de contactos desplegable */}
               {showContactsMenu && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-kikk-gray-dark rounded-sm shadow-xl border border-kikk-gray max-h-60 overflow-y-auto">
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-jet rounded-lg shadow-xl border border-jet-600 max-h-60 overflow-y-auto">
                   <div className="p-2">
-                    <p className="text-kikk-gray text-xs font-semibold mb-2 px-2 uppercase tracking-wider">Seleccionar contacto</p>
+                    <p className="text-jet-900 text-xs font-semibold mb-2 px-2">Seleccionar contacto</p>
                     {contacts.map(contact => (
                       <button
                         key={contact.id}
                         type="button"
                         onClick={() => handleContactSelect(contact)}
-                        className="w-full text-left p-2 rounded-sm hover:bg-kikk-black transition-colors border border-transparent hover:border-kikk-orange"
+                        className="w-full text-left p-2 rounded hover:bg-licorice transition-colors"
                       >
-                        <p className="text-kikk-white text-sm font-medium">{contact.name}</p>
-                        <p className="text-kikk-gray text-xs font-mono truncate">{contact.address}</p>
+                        <p className="text-seasalt text-sm font-medium">{contact.name}</p>
+                        <p className="text-jet-800 text-xs font-mono truncate">{contact.address}</p>
                       </button>
                     ))}
                   </div>
@@ -884,7 +884,7 @@ Puedo ayudarte con:
             </div>
 
             {/* Textarea expandible */}
-            <div className="flex-1 bg-kikk-black rounded-sm border border-kikk-gray focus-within:border-kikk-orange transition-colors">
+            <div className="flex-1 bg-licorice rounded-2xl border border-jet-600 focus-within:border-giants-orange transition-colors">
               <textarea
                 ref={textareaRef}
                 value={listening ? (finalTranscript + interimTranscript) : input}
@@ -948,10 +948,10 @@ Puedo ayudarte con:
             <button
               type="submit"
               disabled={!isConnected || isChatLoading || !input.trim()}
-              className="p-3 bg-kikk-orange hover:bg-kikk-orange-light disabled:bg-kikk-gray disabled:border disabled:border-kikk-gray rounded-sm transition-all duration-200 disabled:opacity-50"
+              className="p-3 bg-giants-orange hover:bg-rust disabled:bg-jet-900 disabled:border disabled:border-jet-700 rounded-full transition-all duration-200 disabled:opacity-50"
               title="Enviar mensaje"
             >
-              <svg className="w-5 h-5 text-kikk-black" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-seasalt" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
               </svg>
             </button>
