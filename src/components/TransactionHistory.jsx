@@ -131,57 +131,51 @@ const TransactionHistory = ({ address, isOpen, onClose }) => {
                     key={tx.txid + index}
                     className="rounded-xl p-4 border transition-all duration-300 bg-jet bg-opacity-50 hover:bg-opacity-70 border-jet-600 hover:border-giants-orange"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      {/* Tipo y fecha */}
-                      <div className="flex items-center gap-3">
-                        <div className={`text-3xl sm:text-4xl ${style.color}`}>
-                          {style.icon}
-                        </div>
-                        <div>
-                          <p className={`font-semibold text-sm sm:text-base ${style.color}`}>
-                            {style.label}
-                          </p>
-                          {/* Monto del contrato en línea separada */}
-                          {tx.type === 'contract' && tx.amountSTX > 0 && (
-                            <p className={`text-base sm:text-lg font-bold ${style.color} mt-1`}>
-                              {style.sign}{tx.amount} STX
-                            </p>
-                          )}
-                          <p className="text-jet-800 text-xs sm:text-sm mt-1">{tx.date}</p>
-                          {tx.status === 'pending' && (
-                            <span className="text-xs font-semibold text-yellow-400">
-                              ⏳ Pendiente
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Monto (solo para transferencias normales, NO contratos) */}
-                      {tx.type !== 'contract' && (
-                        <div className="text-right">
-                          <p className={`text-lg sm:text-xl font-bold ${style.color}`}>
-                            {style.sign && style.sign}{tx.amountSTX > 0 ? tx.amount : ''} {tx.amountSTX > 0 ? 'STX' : ''}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Fee para contratos */}
-                      {tx.type === 'contract' && tx.amountSTX > 0 && tx.fee && parseFloat(tx.fee) > 0 && (
-                        <div className="text-right">
-                          <p className="text-jet-800 text-xs">
-                            Fee: {tx.fee} STX
-                          </p>
-                        </div>
-                      )}
+                    {/* Header: Tipo + Ver ↗ en la misma línea */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`font-semibold text-sm sm:text-base ${style.color}`}>
+                        {style.label}
+                      </span>
+                      <a
+                        href={tx.explorerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-giants-orange hover:text-sandy-brown text-xs sm:text-sm font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        Ver ↗
+                      </a>
                     </div>
 
-                    {/* Dirección */}
-                    <div className="mt-3 bg-licorice bg-opacity-60 rounded-lg p-3">
-                      <p className="text-sandy-brown text-xs sm:text-sm font-semibold mb-1">
-                        {tx.type === 'sent' ? '➜ Para:' : tx.type === 'received' ? '← De:' : '📝 Contrato:'}
+                    {/* Monto */}
+                    {tx.amountSTX > 0 && (
+                      <p className={`text-base sm:text-lg font-bold ${style.color} mb-1`}>
+                        {style.sign}{tx.amount} STX
                       </p>
-                      <p className="text-seasalt font-mono text-xs break-all">
-                        {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
+                    )}
+
+                    {/* Fee más pequeño */}
+                    {tx.fee && parseFloat(tx.fee) > 0 && (
+                      <p className="text-jet-700 text-[10px] sm:text-xs mb-3">
+                        Fee: {tx.fee} STX
+                      </p>
+                    )}
+
+                    {/* Estado pendiente */}
+                    {tx.status === 'pending' && (
+                      <div className="mb-3">
+                        <span className="text-xs font-semibold bg-yellow-600 bg-opacity-20 text-yellow-400 px-2 py-1 rounded">
+                          ⏳ Pendiente
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Dirección/Contrato compacto */}
+                    <div className="mb-2">
+                      <p className="text-seasalt font-mono text-[10px] sm:text-xs break-all">
+                        <span className="text-sandy-brown font-semibold">
+                          {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : tx.type === 'deploy' ? '📝 Contrato:' : 'Contrato: '}
+                        </span>
+                        {tx.type === 'deploy' ? '' : (tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient)}
                       </p>
                     </div>
 
@@ -192,29 +186,6 @@ const TransactionHistory = ({ address, isOpen, onClose }) => {
                         <p className="text-seasalt text-xs mt-1">{tx.memo}</p>
                       </div>
                     )}
-
-                    {/* Footer con botón al explorer */}
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          tx.status === 'success'
-                            ? 'bg-green-600 bg-opacity-20 text-green-400 border border-green-500'
-                            : tx.status === 'pending'
-                            ? 'bg-yellow-600 bg-opacity-20 text-yellow-400 border border-yellow-500'
-                            : 'bg-red-600 bg-opacity-20 text-red-400 border border-red-500'
-                        }`}>
-                          {tx.status === 'success' ? '✅ Completada' : tx.status === 'pending' ? '⏳ Pendiente' : '❌ Fallida'}
-                        </span>
-                      </div>
-                      <a
-                        href={tx.explorerUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-giants-orange hover:text-sandy-brown text-xs sm:text-sm font-semibold flex items-center gap-1 transition-colors"
-                      >
-                        Ver detalles ↗
-                      </a>
-                    </div>
                   </div>
                 );
               })}

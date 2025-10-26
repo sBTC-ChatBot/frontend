@@ -394,26 +394,36 @@ Puedo ayudarte con:
                       key={tx.txid + index}
                       className="p-3 rounded-lg border transition-colors bg-licorice-300 border-jet-600 hover:border-jet-500"
                     >
-                      {/* Header con icono y tipo */}
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={`text-xs font-semibold flex items-center gap-1 ${style.color}`}>
-                          <span className="text-base">{style.icon}</span>
-                          <span className="truncate max-w-[120px]">{style.label}</span>
+                      {/* Header: Tipo + Ver ↗ en la misma línea */}
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-xs font-semibold ${style.color}`}>
+                          {style.label}
                         </span>
-                        {/* Mostrar monto solo si NO es contrato */}
-                        {tx.type !== 'contract' && (
-                          <span className={`text-sm font-bold ${style.color}`}>
-                            {style.sign && style.sign}{tx.amountSTX > 0 ? tx.amount : ''} {tx.amountSTX > 0 ? 'STX' : ''}
-                          </span>
-                        )}
+                        <a
+                          href={tx.explorerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-giants-orange hover:text-sandy-brown text-[9px] font-semibold"
+                        >
+                          Ver ↗
+                        </a>
                       </div>
 
-                      {/* Monto del contrato en línea separada */}
-                      {tx.type === 'contract' && tx.amountSTX > 0 && (
-                        <div className="mb-2">
+                      {/* Monto */}
+                      {tx.amountSTX > 0 && (
+                        <div className="mb-1">
                           <span className={`text-sm font-bold ${style.color}`}>
                             {style.sign}{tx.amount} STX
                           </span>
+                        </div>
+                      )}
+
+                      {/* Fee */}
+                      {tx.fee && parseFloat(tx.fee) > 0 && (
+                        <div className="mb-2">
+                          <p className="text-jet-700 text-[8px]">
+                            Fee: {tx.fee} STX
+                          </p>
                         </div>
                       )}
                       
@@ -424,37 +434,14 @@ Puedo ayudarte con:
                         </div>
                       )}
                       
+                      {/* Dirección/Contrato en una sola línea compacta */}
                       <div className="mb-1">
-                        <p className="text-jet-900 text-[10px] font-semibold mb-1">
-                          {tx.type === 'sent' ? '➜ Para:' : tx.type === 'received' ? '← De:' : '📝 Contrato:'}
+                        <p className="text-jet-800 text-[8px] font-mono truncate">
+                          <span className="text-jet-900 font-semibold">
+                            {tx.type === 'sent' ? 'Para: ' : tx.type === 'received' ? 'De: ' : tx.type === 'deploy' ? '📝 Contrato:' : 'Contrato: '}
+                          </span>
+                          {tx.type === 'deploy' ? '' : (tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient)}
                         </p>
-                        <p className="text-jet-800 text-[10px] font-mono truncate">
-                          {tx.type === 'sent' ? tx.recipient : tx.type === 'received' ? tx.sender : tx.recipient}
-                        </p>
-                      </div>
-                      
-                      {/* Mostrar fee solo si hay monto en el contrato */}
-                      {tx.type === 'contract' && tx.amountSTX > 0 && (
-                        <div className="mb-1">
-                          <p className="text-jet-700 text-[9px]">
-                            ⚡ Fee: {tx.fee} STX
-                          </p>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-jet-600">
-                        <p className="text-jet-700 text-[9px] flex items-center gap-1">
-                          <span>📅</span>
-                          {tx.date}
-                        </p>
-                        <a
-                          href={tx.explorerUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-giants-orange hover:text-sandy-brown text-[9px] font-semibold"
-                        >
-                          Ver ↗
-                        </a>
                       </div>
                     </div>
                   );
