@@ -74,60 +74,15 @@ Puedo ayudarte con:
       })
       .catch((err) => console.error('Error micrófono:', err));
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn("Tu navegador no soporta Speech Recognition API");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'es-ES';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onresult = (event) => {
-      // Reiniciar el temporizador de silencio cuando se detecta voz
-      resetSilenceTimer();
-      
-      let interim = '';
-      let final = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          final += result[0].transcript + ' ';
-        } else {
-          interim += result[0].transcript;
-        }
-      }
-
-      if (final) {
-        setFinalTranscript((prev) => prev + final);
-        setInterimTranscript('');
-      }
-      if (interim) {
-        setInterimTranscript(interim);
-      }
-    };
-
-    recognition.onend = () => {
-      clearTimeout(silenceTimerRef.current);
-      setListening(false);
-    };
-
-    recognition.onerror = (event) => {
-      console.error('Error en reconocimiento:', event.error);
-      clearTimeout(silenceTimerRef.current);
-      setListening(false);
-    };
-
-    recognitionRef.current = recognition;
-
     // Limpiar el temporizador al desmontar el componente
     return () => {
       clearTimeout(silenceTimerRef.current);
+      const recognition = recognitionRef.current;
+      if (recognition) {
+        recognition.stop();
+      }
     };
-  }, [resetSilenceTimer]);
+  }, []);
 
   // Actualizar el input con la transcripción
   useEffect(() => {
@@ -138,27 +93,76 @@ Puedo ayudarte con:
 
   // Función para iniciar el reconocimiento de voz
   const startListening = () => {
-    if (recognitionRef.current && !listening) {
-      setFinalTranscript('');
-      setInterimTranscript('');
-      setInput('');
-      
-      navigator.mediaDevices
-        .getUserMedia({ 
-          audio: selectedDeviceId 
-            ? { deviceId: { exact: selectedDeviceId } } 
-            : true 
-        })
-        .then(() => {
-          recognitionRef.current.start();
-          setListening(true);
-          resetSilenceTimer(); // Iniciar el temporizador de silencio
-        })
-        .catch((err) => {
-          console.error('Error al iniciar micrófono:', err);
-          alert('⚠️ No se pudo acceder al micrófono. Verifica los permisos.');
-        });
+    if (listening) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('⚠️ Tu navegador no soporta reconocimiento de voz.');
+      return;
     }
+
+    setFinalTranscript('');
+    setInterimTranscript('');
+    setInput('');
+    
+    navigator.mediaDevices
+      .getUserMedia({ 
+        audio: selectedDeviceId 
+          ? { deviceId: { exact: selectedDeviceId } } 
+          : true 
+      })
+      .then(() => {
+        // Crear nueva instancia de recognition cada vez
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+          // Reiniciar el temporizador de silencio cuando se detecta voz
+          resetSilenceTimer();
+          
+          let interim = '';
+          let final = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              final += result[0].transcript + ' ';
+            } else {
+              interim += result[0].transcript;
+            }
+          }
+
+          if (final) {
+            setFinalTranscript((prev) => prev + final);
+            setInterimTranscript('');
+          }
+          if (interim) {
+            setInterimTranscript(interim);
+          }
+        };
+
+        recognition.onend = () => {
+          clearTimeout(silenceTimerRef.current);
+          setListening(false);
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Error en reconocimiento:', event.error);
+          clearTimeout(silenceTimerRef.current);
+          setListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        setListening(true);
+        resetSilenceTimer(); // Iniciar el temporizador de silencio
+      })
+      .catch((err) => {
+        console.error('Error al iniciar micrófono:', err);
+        alert('⚠️ No se pudo acceder al micrófono. Verifica los permisos.');
+      });
   };
 
   // Función para formatear mensajes del bot
@@ -325,7 +329,7 @@ Puedo ayudarte con:
   // Mock data para contactos
   const contacts = [
     { id: 1, name: 'Alice', address: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM' },
-    { id: 2, name: 'Bob', address: 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG' },
+    { id: 2, name: 'Bob', address: 'ST1WJWFX04BBFM40K9KVET417DHJY7MJ65TTK1G4V' },
     { id: 3, name: 'Charlie', address: 'ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC' }
   ];
 
