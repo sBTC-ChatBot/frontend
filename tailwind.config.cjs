@@ -16,6 +16,8 @@ module.exports = {
         'kikk-gray-dark': '#333333',
         'kikk-gray': '#666666',
         // Colores originales mantenidos para compatibilidad
+        //#000000, #FFFFFF, #FFA500, #FF8C00, #8A2BE2, #4B0082, #696969
+        // #000000, #FFFFFF, #FFA500, #FF8C00, #FF4500, #F5F5DC
         'black': {
           DEFAULT: '#000000',
           100: '#000000',
