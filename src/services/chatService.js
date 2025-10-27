@@ -3,20 +3,24 @@
  */
 
 // URL base del backend
-const API_BASE_URL = "https://clarity-backend-duun.onrender.com";
-
+// const API_BASE_URL = "https://clarity-backend-duun.onrender.com";
+const API_BASE_URL = "http://127.0.0.1:5000";
 /**
  * Envía un mensaje al chatbot y recibe una acción recomendada
  * @param {string} message - El mensaje del usuario para el chatbot
+ * @param {string} senderWallet - La dirección de wallet del usuario conectado
  */
-export const sendChatMessage = async (message) => {
+export const sendChatMessage = async (message, senderWallet = '') => {
   try {
     const response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ 
+        message,
+        sender_wallet: senderWallet  // ✅ Agregar la wallet del usuario
+      }),
     });
 
     if (!response.ok) {
