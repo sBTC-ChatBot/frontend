@@ -3,8 +3,8 @@
  */
 
 // URL base del backend
-// const API_BASE_URL = "https://clarity-backend-duun.onrender.com";
-const API_BASE_URL = "http://127.0.0.1:5000";
+const API_BASE_URL = "https://clary-backend-ai.onrender.com/";
+//const API_BASE_URL = "http://127.0.0.1:5000";
 /**
  * Envía un mensaje al chatbot y recibe una acción recomendada
  * @param {string} message - El mensaje del usuario para el chatbot
