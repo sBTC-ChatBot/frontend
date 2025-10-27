@@ -1,16 +1,48 @@
-# React + Vite
+# sBTC ChatBot 🚀
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Chatbot inteligente para interactuar con contratos Clarity en Stacks blockchain usando lenguaje natural.
 
-Currently, two official plugins are available:
+## ✨ Características
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 💬 Chat conversacional con contratos inteligentes
+- 💰 Transferencias STX seguras
+- 🔍 Consultas de balances y contratos
+- 🔐 Integración con wallets de Stacks (Hiro, Xverse, Leather)
 
-## React Compiler
+## 🚀 Inicio Rápido
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerrequisitos
+- Node.js 16+
+- Wallet de Stacks
 
-## Expanding the ESLint configuration
+### Instalación
+```bash
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Abre `http://localhost:5173`
+
+## 📁 Estructura
+```
+src/
+├── components/     # Componentes UI
+├── pages/         # Páginas principales
+├── hooks/         # Hooks personalizados
+├── services/      # APIs y servicios
+└── config/        # Configuración
+```
+
+## 🛠️ Scripts
+- `npm run dev` - Desarrollo
+- `npm run build` - Producción
+- `npm run preview` - Preview
+
+## 💡 Uso
+1. Conecta tu wallet
+2. Chatea en lenguaje natural
+3. Confirma transacciones
+
+---
+
+Desarrollado para el ecosistema Stacks
