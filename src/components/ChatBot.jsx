@@ -28,6 +28,12 @@ Puedo ayudarte con:
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showContactsMenu, setShowContactsMenu] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactWallet, setNewContactWallet] = useState('');
+  const [isAddingContact, setIsAddingContact] = useState(false);
+  const [contacts, setContacts] = useState([]); // Contactos reales desde BD
+  const [loadingContacts, setLoadingContacts] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef(null);
@@ -326,16 +332,100 @@ Puedo ayudarte con:
     cancelTransfer
   } = useStacksContract();
 
-  // Mock data para contactos
-  const contacts = [
-    { id: 1, name: 'Alice', address: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM' },
-    { id: 2, name: 'Bob', address: 'ST1WJWFX04BBFM40K9KVET417DHJY7MJ65TTK1G4V' },
-    { id: 3, name: 'Charlie', address: 'ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC' }
-  ];
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Registrar o verificar usuario cuando se conecta
+  useEffect(() => {
+    const registerOrCheckUser = async () => {
+      if (isConnected && userAddress) {
+        try {
+          // 1. Verificar si el usuario ya existe
+          const checkResponse = await fetch(`http://localhost:5000/users/wallet/${userAddress}`);
+          
+          if (!checkResponse.ok) {
+            // Usuario no existe, registrarlo automáticamente
+            console.log('Usuario no encontrado, registrando...');
+            
+            // Generar un username basado en la wallet (primeros 8 caracteres)
+            const username = `user_${userAddress.substring(0, 8)}`;
+            
+            const createResponse = await fetch('http://localhost:5000/users', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                username: username,
+                wallet_address: userAddress
+              })
+            });
+
+            if (createResponse.ok) {
+              const userData = await createResponse.json();
+              console.log('Usuario registrado exitosamente:', userData);
+              
+              // Mostrar mensaje de bienvenida
+              setMessages(prev => [...prev, {
+                id: Date.now(),
+                text: `🎉 ¡Bienvenido! Tu cuenta ha sido creada con el usuario **${username}**\n\n✅ Ya puedes agregar contactos y realizar transferencias.`,
+                sender: 'bot'
+              }]);
+            }
+          } else {
+            // Usuario ya existe
+            const userData = await checkResponse.json();
+            console.log('Usuario encontrado:', userData.user);
+          }
+        } catch (error) {
+          console.error('Error al verificar/registrar usuario:', error);
+        }
+      }
+    };
+
+    registerOrCheckUser();
+  }, [isConnected, userAddress]);
+
+  // Cargar contactos cuando el usuario se conecta
+  useEffect(() => {
+    const loadContacts = async () => {
+      if (isConnected && userAddress) {
+        setLoadingContacts(true);
+        try {
+          // Obtener contactos por wallet address
+          const response = await fetch(`http://localhost:5000/users/wallet/${userAddress}/contacts`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.contacts) {
+              // Mapear contactos al formato esperado por el componente
+              const formattedContacts = data.contacts.map(contact => ({
+                id: contact.id,
+                name: contact.nombre,
+                address: contact.wallet_address
+              }));
+              setContacts(formattedContacts);
+              console.log(`✅ ${formattedContacts.length} contactos cargados`);
+            }
+          } else {
+            // Si no hay contactos o el usuario no existe, dejar vacío
+            setContacts([]);
+          }
+        } catch (error) {
+          console.error('Error al cargar contactos:', error);
+          setContacts([]);
+        } finally {
+          setLoadingContacts(false);
+        }
+      } else {
+        // Si no está conectado, limpiar contactos
+        setContacts([]);
+      }
+    };
+
+    loadContacts();
+  }, [isConnected, userAddress]);
 
   // Cargar historial de transacciones cuando el usuario se conecta
   useEffect(() => {
@@ -449,6 +539,91 @@ Puedo ayudarte con:
     textareaRef.current?.focus();
   };
 
+  const handleAddContact = async () => {
+    if (!newContactName.trim() || !newContactWallet.trim()) {
+      alert('⚠️ Por favor completa todos los campos');
+      return;
+    }
+
+    // Validar formato de wallet
+    if (!newContactWallet.startsWith('ST') && !newContactWallet.startsWith('SP')) {
+      alert('⚠️ La dirección debe comenzar con ST o SP');
+      return;
+    }
+
+    if (!userAddress) {
+      alert('⚠️ Debes conectar tu wallet primero');
+      return;
+    }
+
+    setIsAddingContact(true);
+
+    try {
+      // 1. Obtener el user_id del usuario actual por su wallet
+      const userResponse = await fetch(`http://localhost:5000/users/wallet/${userAddress}`);
+      
+      if (!userResponse.ok) {
+        throw new Error('Tu wallet no está registrada. Por favor reconecta tu wallet para registrarte automáticamente.');
+      }
+
+      const userData = await userResponse.json();
+      const userId = userData.user.id;
+
+      // 2. Crear el contacto
+      const contactResponse = await fetch('http://localhost:5000/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          nombre: newContactName.trim(),
+          wallet_address: newContactWallet.trim()
+        })
+      });
+
+      const contactData = await contactResponse.json();
+
+      if (!contactResponse.ok) {
+        throw new Error(contactData.error || 'Error al crear el contacto');
+      }
+
+      // 3. Éxito: cerrar modal y limpiar campos
+      alert(`✅ Contacto "${newContactName}" agregado exitosamente`);
+      setShowAddContactModal(false);
+      setNewContactName('');
+      setNewContactWallet('');
+
+      // 4. Recargar la lista de contactos
+      const reloadResponse = await fetch(`http://localhost:5000/users/wallet/${userAddress}/contacts`);
+      if (reloadResponse.ok) {
+        const data = await reloadResponse.json();
+        if (data.success && data.contacts) {
+          const formattedContacts = data.contacts.map(contact => ({
+            id: contact.id,
+            name: contact.nombre,
+            address: contact.wallet_address
+          }));
+          setContacts(formattedContacts);
+          console.log(`✅ Lista de contactos actualizada: ${formattedContacts.length} contactos`);
+        }
+      }
+
+      // 5. Mostrar mensaje en el chat
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: `✅ Contacto **${newContactName}** agregado correctamente.\n\n📬 Wallet: ${newContactWallet.substring(0, 10)}...`,
+        sender: 'bot'
+      }]);
+
+    } catch (error) {
+      console.error('Error al agregar contacto:', error);
+      alert(`❌ ${error.message}`);
+    } finally {
+      setIsAddingContact(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-licorice overflow-hidden font-mono">
       {/* Sidebar - Panel lateral */}
@@ -465,24 +640,70 @@ Puedo ayudarte con:
 
           {/* Contactos */}
           <div className="mb-6">
-            <h4 className="text-seasalt text-sm font-semibold mb-3 flex items-center gap-2 bg-gradient-to-r from-rust to-transparent px-3 py-2 rounded-lg">
-              <span className="text-lg">👥</span> 
-              <span>Contactos</span>
-            </h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-kikk-white text-sm font-semibold flex items-center gap-2 bg-kikk-orange px-3 py-2 rounded-sm flex-1 uppercase tracking-widest">
+                <span className="text-lg">👥</span> 
+                <span>Contactos</span>
+              </h4>
+              {/* Botón para agregar contacto */}
+              <button
+                onClick={() => setShowAddContactModal(true)}
+                disabled={!isConnected}
+                className="p-2 bg-kikk-orange hover:bg-kikk-orange-light disabled:bg-kikk-gray disabled:cursor-not-allowed text-kikk-black rounded-sm transition-all duration-200 disabled:opacity-50 ml-2"
+                title="Agregar contacto"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
             <div className="space-y-2">
-              {contacts.map(contact => (
-                <button
-                  key={contact.id}
-                  onClick={() => handleContactSelect(contact)}
-                  className="w-full text-left p-3 rounded-lg bg-licorice-300 hover:bg-jet-400 transition-all duration-200 border border-jet-600 hover:border-giants-orange hover:shadow-lg hover:shadow-giants-orange/20 group"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm group-hover:scale-110 transition-transform">👤</span>
-                    <p className="text-seasalt font-medium text-sm">{contact.name}</p>
-                  </div>
-                  <p className="text-jet-800 text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
-                </button>
-              ))}
+              {/* Mensaje si no está conectado */}
+              {!isConnected && (
+                <div className="p-4 rounded-sm bg-kikk-black border border-kikk-gray text-center">
+                  <p className="text-kikk-gray text-xs uppercase tracking-wider">
+                    🔒 Conecta tu wallet para ver contactos
+                  </p>
+                </div>
+              )}
+
+              {/* Spinner de carga */}
+              {isConnected && loadingContacts && (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kikk-orange"></div>
+                  <p className="text-kikk-gray text-xs mt-2">Cargando contactos...</p>
+                </div>
+              )}
+
+              {/* Lista de contactos */}
+              {isConnected && !loadingContacts && contacts.length > 0 && (
+                contacts.map(contact => (
+                  <button
+                    key={contact.id}
+                    onClick={() => handleContactSelect(contact)}
+                    className="w-full text-left p-3 rounded-sm bg-kikk-black hover:bg-kikk-gray-dark transition-all duration-200 border border-kikk-gray hover:border-kikk-orange group"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm group-hover:scale-110 transition-transform">👤</span>
+                      <p className="text-kikk-white font-medium text-sm">{contact.name}</p>
+                    </div>
+                    <p className="text-kikk-gray text-xs font-mono truncate ml-6">{contact.address.substring(0, 20)}...</p>
+                  </button>
+                ))
+              )}
+
+              {/* Mensaje cuando no hay contactos */}
+              {isConnected && !loadingContacts && contacts.length === 0 && (
+                <div className="p-4 rounded-sm bg-kikk-black border border-kikk-gray text-center">
+                  <p className="text-2xl mb-2">📭</p>
+                  <p className="text-kikk-gray text-xs">
+                    No tienes contactos aún
+                  </p>
+                  <p className="text-kikk-orange text-xs mt-1">
+                    Haz clic en + para agregar
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -958,6 +1179,106 @@ Puedo ayudarte con:
           </form>
         </div>
       </div>
+
+      {/* Modal para agregar contacto */}
+      {showAddContactModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+          <div className="bg-kikk-gray-dark border-2 border-kikk-orange rounded-xl max-w-md w-full p-6 shadow-2xl shadow-kikk-orange/30">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-kikk-white text-xl font-bold flex items-center gap-2 uppercase tracking-wider">
+                <span className="text-2xl">➕</span>
+                <span>Agregar Contacto</span>
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAddContactModal(false);
+                  setNewContactName('');
+                  setNewContactWallet('');
+                }}
+                className="text-kikk-gray hover:text-kikk-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Formulario */}
+            <div className="space-y-4">
+              {/* Campo Nombre */}
+              <div>
+                <label className="block text-kikk-orange text-sm font-semibold mb-2 uppercase tracking-wider">
+                  👤 Nombre del Contacto
+                </label>
+                <input
+                  type="text"
+                  value={newContactName}
+                  onChange={(e) => setNewContactName(e.target.value)}
+                  placeholder="Ej: Andrés"
+                  className="w-full px-4 py-3 bg-kikk-black border border-kikk-gray rounded-sm text-kikk-white placeholder-kikk-gray focus:outline-none focus:border-kikk-orange transition-colors"
+                  disabled={isAddingContact}
+                />
+              </div>
+
+              {/* Campo Wallet */}
+              <div>
+                <label className="block text-kikk-orange text-sm font-semibold mb-2 uppercase tracking-wider">
+                  📬 Dirección de Wallet
+                </label>
+                <input
+                  type="text"
+                  value={newContactWallet}
+                  onChange={(e) => setNewContactWallet(e.target.value)}
+                  placeholder="ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
+                  className="w-full px-4 py-3 bg-kikk-black border border-kikk-gray rounded-sm text-kikk-white placeholder-kikk-gray focus:outline-none focus:border-kikk-orange transition-colors font-mono text-sm"
+                  disabled={isAddingContact}
+                />
+              </div>
+
+              {/* Info adicional */}
+              <div className="bg-kikk-black border border-kikk-gray rounded-sm p-3">
+                <p className="text-kikk-gray text-xs flex items-start gap-2">
+                  <span className="text-sm">💡</span>
+                  <span>La dirección debe comenzar con <strong className="text-kikk-orange">ST</strong> o <strong className="text-kikk-orange">SP</strong></span>
+                </p>
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowAddContactModal(false);
+                    setNewContactName('');
+                    setNewContactWallet('');
+                  }}
+                  disabled={isAddingContact}
+                  className="flex-1 px-4 py-3 bg-kikk-black hover:bg-kikk-gray-dark text-kikk-white rounded-sm font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-kikk-gray uppercase tracking-wider"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAddContact}
+                  disabled={isAddingContact || !newContactName.trim() || !newContactWallet.trim()}
+                  className="flex-1 px-4 py-3 bg-kikk-orange hover:bg-kikk-orange-light text-kikk-black rounded-sm font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wider"
+                >
+                  {isAddingContact ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-kikk-black"></div>
+                      <span>Agregando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>✅</span>
+                      <span>Agregar</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Historial de Transacciones */}
       <TransactionHistory

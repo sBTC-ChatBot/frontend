@@ -154,7 +154,8 @@ export const useStacksContract = () => {
     setChatResponse(null);
     
     try {
-      const response = await sendChatMessage(message);
+      // ✅ Enviar el mensaje CON la wallet del usuario conectado
+      const response = await sendChatMessage(message, userAddress);
       
       switch (response.action) {
         case 'read':
@@ -165,12 +166,17 @@ export const useStacksContract = () => {
           break;
         case 'transfer':
           if (response.recipient && response.amount) {
+            // Mostrar información adicional si viene de un contacto
+            const recipientInfo = response.recipient_name 
+              ? `${response.recipient_name} (${response.recipient})` 
+              : response.recipient;
+            
             setPendingTransfer({
               recipient: response.recipient,
               amount: response.amount,
-              message: `¿Deseas transferir ${response.amount} STX a ${response.recipient}?`
+              message: `¿Deseas transferir ${response.amount} STX a ${recipientInfo}?`
             });
-            setChatResponse(`✋ Confirma la transferencia de ${response.amount} STX a ${response.recipient}`);
+            setChatResponse(`✋ Confirma la transferencia de ${response.amount} STX a ${recipientInfo}`);
           } else {
             setChatResponse('⚠️ No pude identificar el destinatario o la cantidad. Por favor, especifica la dirección y el monto.');
           }
