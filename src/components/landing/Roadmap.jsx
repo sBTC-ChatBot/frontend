@@ -53,8 +53,8 @@ const Roadmap = () => {
         "Yield farming asistido",
         "Portfolio tracking avanzado"
       ],
-      color: "from-orange-500 to-amber-500",
-      statusColor: "bg-orange-500"
+      color: "from-giants-orange to-sandy-brown",
+      statusColor: "bg-giants-orange"
     },
     {
       phase: "Fase 5",
@@ -87,7 +87,7 @@ const Roadmap = () => {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-transparent text-white relative overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
@@ -97,14 +97,14 @@ const Roadmap = () => {
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-20">
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black mb-6">
+        <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black mb-3 sm:mb-4 lg:mb-6">
             Nuestro{" "}
             <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
               Roadmap
             </span>
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">
             El futuro del chatbot blockchain, paso a paso
           </p>
         </div>
@@ -115,11 +115,11 @@ const Roadmap = () => {
           <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-500 via-purple-500 to-blue-500 transform -translate-x-1/2"></div>
 
           {/* Phases */}
-          <div className="space-y-12">
+          <div className="space-y-8 sm:space-y-10 lg:space-y-12">
             {phases.map((phase, index) => (
               <div
                 key={index}
-                className={`relative flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-8`}
+                className={`relative flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-6 sm:gap-8`}
               >
                 {/* Timeline dot */}
                 <div className="hidden lg:block absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -128,7 +128,7 @@ const Roadmap = () => {
 
                 {/* Content card */}
                 <div className={`flex-1 ${index % 2 === 0 ? 'lg:text-right lg:pr-12' : 'lg:text-left lg:pl-12'} w-full`}>
-                  <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl border border-gray-700 hover:border-gray-600 transition-all duration-500 hover:shadow-2xl hover:shadow-orange-500/20 group">
+                  <div className="bg-gray-800/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-2xl border border-gray-700 hover:border-gray-600 transition-all duration-500 hover:shadow-2xl hover:shadow-orange-500/20 group">
                     {/* Status badge */}
                     <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${phase.statusColor} bg-opacity-20 border border-current mb-4`}>
                       <span className={`w-2 h-2 ${phase.statusColor} rounded-full animate-pulse`}></span>
@@ -136,17 +136,17 @@ const Roadmap = () => {
                     </div>
 
                     {/* Phase number */}
-                    <div className={`text-6xl font-black bg-gradient-to-r ${phase.color} bg-clip-text text-transparent opacity-50 mb-2`}>
+                    <div className={`text-4xl sm:text-5xl lg:text-6xl font-black bg-gradient-to-r ${phase.color} bg-clip-text text-transparent opacity-50 mb-2`}>
                       {phase.phase}
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-3xl font-bold mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-orange-500 group-hover:to-amber-500 transition-all duration-300">
+                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-orange-500 group-hover:to-amber-500 transition-all duration-300">
                       {phase.title}
                     </h3>
 
                     {/* Date */}
-                    <p className="text-gray-400 mb-6">{phase.date}</p>
+                    <p className="text-gray-400 mb-4 sm:mb-6">{phase.date}</p>
 
                     {/* Items */}
                     <ul className={`space-y-2 ${index % 2 === 0 ? 'lg:text-right' : 'lg:text-left'}`}>
@@ -168,9 +168,9 @@ const Roadmap = () => {
         </div>
 
         {/* Bottom CTA */}
-        <div className="mt-20 text-center">
+        <div className="mt-12 sm:mt-16 lg:mt-20 text-center">
           <p className="text-gray-400 mb-6">¿Quieres ser parte del futuro?</p>
-          <button className="px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full font-semibold text-lg shadow-xl hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105">
+          <button className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full font-semibold text-base sm:text-lg shadow-xl hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105">
             Únete a la Comunidad
           </button>
         </div>
